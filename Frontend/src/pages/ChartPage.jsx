@@ -1,10 +1,30 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ChartContainer from '../components/ChartContainer';
-import { ArrowLeft, Share2, Settings, Maximize2, MoreHorizontal } from 'lucide-react';
+import api from '../api/axios';
+import { ArrowLeft, Share2, Settings, Maximize2, MoreHorizontal, Loader2 } from 'lucide-react';
 
 const ChartPage = () => {
     const { symbol } = useParams();
-    const timeframes = ['1m', '2m', '5m', '15m', '30m', '1h', '4h', '1d', '1wk'];
+    const [intervals, setIntervals] = useState(['1m', '5m', '15m', '1h', '1d']);
+    const [selectedInterval, setSelectedInterval] = useState('5m');
+    const [loadingIntervals, setLoadingIntervals] = useState(true);
+
+    useEffect(() => {
+        const fetchIntervals = async () => {
+            try {
+                const { data } = await api.get('/market/intervals');
+                if (data.success) {
+                    setIntervals(data.data);
+                }
+            } catch (error) {
+                console.error('Error fetching intervals', error);
+            } finally {
+                setLoadingIntervals(false);
+            }
+        };
+        fetchIntervals();
+    }, []);
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col pt-16">
@@ -27,14 +47,19 @@ const ChartPage = () => {
 
                     {/* Timeframe Selector */}
                     <div className="flex items-center gap-0.5">
-                        {timeframes.slice(0, 5).map(tf => (
-                            <button 
-                                key={tf}
-                                className={`px-2.5 h-8 flex items-center justify-center rounded text-xs font-bold transition-all ${tf === '5m' ? 'bg-blue-600/10 text-blue-400' : 'text-slate-500 hover:bg-slate-900 hover:text-slate-300'}`}
-                            >
-                                {tf}
-                            </button>
-                        ))}
+                        {loadingIntervals ? (
+                            <Loader2 className="w-4 h-4 animate-spin text-slate-700 mx-4" />
+                        ) : (
+                            intervals.map(tf => (
+                                <button 
+                                    key={tf}
+                                    onClick={() => setSelectedInterval(tf)}
+                                    className={`px-3 h-8 flex items-center justify-center rounded text-xs font-bold transition-all uppercase ${tf === selectedInterval ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-500 hover:bg-slate-900 hover:text-slate-300'}`}
+                                >
+                                    {tf}
+                                </button>
+                            ))
+                        )}
                         <button className="p-1.5 text-slate-500 hover:text-white">
                             <MoreHorizontal className="w-4 h-4" />
                         </button>
@@ -59,8 +84,8 @@ const ChartPage = () => {
             </header>
 
             {/* Chart Area */}
-            <main className="flex-1 w-full bg-slate-950 overflow-hidden">
-                <ChartContainer symbol={symbol} />
+            <main className="flex-1 w-full bg-slate-950 overflow-hidden relative">
+                <ChartContainer symbol={symbol} interval={selectedInterval} />
             </main>
         </div>
     );

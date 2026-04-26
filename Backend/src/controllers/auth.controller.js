@@ -14,8 +14,8 @@ const sendTokenResponse = (user, statusCode, res) => {
     const options = {
         expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // true in production
-        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     };
     res.status(statusCode).cookie('jwt', token, options).json({
         _id: user.id,
@@ -110,7 +110,7 @@ export const logoutUser = async (req, res) => {
 
         res.clearCookie('jwt', {
             httpOnly: true,
-            sameSite: 'strict',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             secure: process.env.NODE_ENV === 'production'
         });
         res.status(200).json({ message: 'User logged out successfully' });

@@ -1,101 +1,149 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts';
+import api from '../api/axios';
+import { Loader2, AlertCircle } from 'lucide-react';
 
-const ChartContainer = ({ symbol }) => {
+const ChartContainer = ({ symbol, interval = '5m' }) => {
     const chartContainerRef = useRef();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
+        if (!symbol) return;
+
+        let chart;
+        let candlestickSeries;
+
+        const initChart = () => {
+            if (!chartContainerRef.current) return;
+            
+            chart = createChart(chartContainerRef.current, {
+                layout: {
+                    background: { type: ColorType.Solid, color: '#020617' },
+                    textColor: '#64748b',
+                    fontSize: 12,
+                    fontFamily: 'Inter, sans-serif',
+                    attributionLogo: false,
+                },
+                grid: {
+                    vertLines: { color: '#0f172a' },
+                    horzLines: { color: '#0f172a' },
+                },
+                width: chartContainerRef.current.clientWidth,
+                height: 600,
+                crosshair: {
+                    mode: 0,
+                    vertLine: {
+                        width: 1,
+                        color: '#334155',
+                        style: 3,
+                    },
+                    horzLine: {
+                        width: 1,
+                        color: '#334155',
+                        style: 3,
+                    },
+                },
+                timeScale: {
+                    borderColor: '#1e293b',
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
+                rightPriceScale: {
+                    borderColor: '#1e293b',
+                }
+            });
+
+            candlestickSeries = chart.addSeries(CandlestickSeries, {
+                upColor: '#10b981',
+                downColor: '#ef4444',
+                borderVisible: false,
+                wickUpColor: '#10b981',
+                wickDownColor: '#ef4444',
+            });
+        };
+
+        const fetchData = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                // Fetch real data from backend
+                const response = await api.get(`/market/candles?symbol=${symbol}&interval=${interval}`);
+                const data = response.data;
+                
+                console.log(`API Response received for ${symbol} (${interval}):`, data);
+
+                if (data.success && data.data && Array.isArray(data.data.candles)) {
+                    // 1. Filter out any malformed objects
+                    // 2. Sort strictly by time (required by Lightweight Charts)
+                    const cleanData = data.data.candles
+                        .filter(candle => candle && typeof candle.time === 'number')
+                        .sort((a, b) => a.time - b.time);
+
+                    if (cleanData.length === 0) {
+                        throw new Error('No valid data points found for this timeframe');
+                    }
+
+                    console.log(`Setting ${cleanData.length} candles to chart`);
+                    candlestickSeries.setData(cleanData);
+                    chart.timeScale().fitContent();
+                } else {
+                    throw new Error(data.message || 'Malformed API response structure');
+                }
+            } catch (err) {
+                console.error('Chart Data Error:', err);
+                setError(err.response?.data?.message || err.message || 'Connection error while loading chart');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        initChart();
+        fetchData();
+
         const handleResize = () => {
-            if (chartContainerRef.current) {
+            if (chartContainerRef.current && chart) {
                 chart.applyOptions({ width: chartContainerRef.current.clientWidth });
             }
         };
-
-        const chart = createChart(chartContainerRef.current, {
-            layout: {
-                background: { type: ColorType.Solid, color: '#020617' },
-                textColor: '#64748b',
-                fontSize: 12,
-                fontFamily: 'Inter, sans-serif',
-                attributionLogo: false,
-            },
-            grid: {
-                vertLines: { color: '#0f172a' },
-                horzLines: { color: '#0f172a' },
-            },
-            width: chartContainerRef.current.clientWidth,
-            height: 600,
-            crosshair: {
-                mode: 0,
-                vertLine: {
-                    width: 1,
-                    color: '#334155',
-                    style: 3,
-                },
-                horzLine: {
-                    width: 1,
-                    color: '#334155',
-                    style: 3,
-                },
-            },
-            timeScale: {
-                borderColor: '#1e293b',
-                timeVisible: true,
-                secondsVisible: false,
-            },
-            rightPriceScale: {
-                borderColor: '#1e293b',
-            }
-        });
-
-        const candlestickSeries = chart.addSeries(CandlestickSeries, {
-            upColor: '#10b981',
-            downColor: '#ef4444',
-            borderVisible: false,
-            wickUpColor: '#10b981',
-            wickDownColor: '#ef4444',
-        });
-
-        // Generate Dummy Candle Data
-        const generateDummyData = () => {
-            const data = [];
-            let date = new Date(Date.UTC(2024, 0, 1, 0, 0, 0));
-            let open = 1500;
-            for (let i = 0; i < 100; i++) {
-                const close = open + (Math.random() - 0.5) * 50;
-                const high = Math.max(open, close) + Math.random() * 20;
-                const low = Math.min(open, close) - Math.random() * 20;
-                data.push({
-                    time: date.getTime() / 1000,
-                    open: parseFloat(open.toFixed(2)),
-                    high: parseFloat(high.toFixed(2)),
-                    low: parseFloat(low.toFixed(2)),
-                    close: parseFloat(close.toFixed(2)),
-                });
-                open = close;
-                date.setMinutes(date.getMinutes() + 5);
-            }
-            return data;
-        };
-
-        candlestickSeries.setData(generateDummyData());
-
-        // Fit content
-        chart.timeScale().fitContent();
 
         window.addEventListener('resize', handleResize);
 
         return () => {
             window.removeEventListener('resize', handleResize);
-            chart.remove();
+            if (chart) chart.remove();
         };
-    }, []);
+    }, [symbol, interval]);
 
     return (
-        <div className="w-full h-full relative group">
+        <div className="w-full h-full relative group bg-slate-950 rounded-xl overflow-hidden border border-slate-900 shadow-2xl">
+            {/* Loading Overlay */}
+            {loading && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
+                    <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
+                    <p className="text-slate-400 font-bold tracking-widest uppercase text-[10px] animate-pulse">Synchronizing Market Data...</p>
+                </div>
+            )}
+
+            {/* Error Overlay */}
+            {error && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950 px-6 text-center">
+                    <AlertCircle className="w-12 h-12 text-red-500/50 mb-4" />
+                    <h3 className="text-white font-bold text-lg mb-2">Network Error</h3>
+                    <p className="text-slate-500 max-w-xs text-sm leading-relaxed">{error}</p>
+                    <button 
+                        onClick={() => window.location.reload()}
+                        className="mt-8 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-600/20"
+                    >
+                        Retry Connection
+                    </button>
+                </div>
+            )}
+
+            {/* Chart Canvas */}
             <div ref={chartContainerRef} className="w-full h-full min-h-[600px]" />
             
-            {/* Custom subtle attribution to satisfy license requirements */}
+            {/* Attribution */}
             <a 
                 href="https://www.tradingview.com/" 
                 target="_blank" 

@@ -39,7 +39,23 @@ export const getMarketCandles = async (req, res) => {
                 candles
             }
         });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
 
+// @desc    Get available chart intervals
+// @route   GET /api/market/intervals
+export const getMarketIntervals = async (req, res) => {
+    try {
+        const intervals = Object.keys(intervalRangeMap);
+        return res.status(200).json({
+            success: true,
+            data: intervals
+        });
     } catch (error) {
         return res.status(500).json({
             success: false,
