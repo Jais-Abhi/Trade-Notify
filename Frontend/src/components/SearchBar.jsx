@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { addToWishlist } from '../features/wishlist/wishlistSlice';
 import { Search, Loader2, X } from 'lucide-react';
 import api from '../api/axios';
 import { useUI } from '../context/UIContext';
@@ -16,7 +18,8 @@ function debounce(fn, delay) {
 }
 
 const SearchBar = () => {
-    const { isSearchOpen, setIsSearchOpen, openSearch, closeSearch, addToWatchlist } = useUI();
+    const { isSearchOpen, setIsSearchOpen, openSearch, closeSearch } = useUI();
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     const [query, setQuery] = useState('');
     const [results, setResults] = useState([]);
@@ -112,7 +115,12 @@ const SearchBar = () => {
     };
 
     const handleSelect = (stock) => {
-        addToWatchlist(stock);
+        dispatch(addToWishlist({
+            symbol: stock.symbol,
+            name: stock.name,
+            series: stock.series,
+            isin: stock.isin
+        }));
         setQuery('');
         closeSearch();
         navigate(`/charts/${stock.symbol}`);

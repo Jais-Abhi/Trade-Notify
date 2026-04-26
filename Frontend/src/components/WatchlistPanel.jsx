@@ -1,10 +1,24 @@
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { removeFromWishlist } from '../features/wishlist/wishlistSlice';
 import { useUI } from '../context/UIContext';
-import { X, Plus, Trash2, LineChart } from 'lucide-react';
+import { X, Plus, Trash2, LineChart, Loader2, AlertCircle } from 'lucide-react';
 
 const WatchlistPanel = () => {
-    const { isWatchlistOpen, toggleWatchlist, watchlist, removeFromWatchlist, setSelectedStock } = useUI();
+    const { isWatchlistOpen, toggleWatchlist } = useUI();
+    const { items: wishlist, loading, error } = useSelector((state) => state.wishlist);
+    const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    const handleRemove = (e, symbol) => {
+        e.stopPropagation();
+        dispatch(removeFromWishlist(symbol));
+    };
+
+    const handleNavigate = (symbol) => {
+        navigate(`/charts/${symbol}`);
+        if (window.innerWidth < 768) toggleWatchlist();
+    };
 
     return (
         <div 
@@ -23,14 +37,27 @@ const WatchlistPanel = () => {
                 </button>
             </div>
 
+            {/* Error Message */}
+            {error && (
+                <div className="mx-4 mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3 text-red-500 text-[10px] font-bold uppercase tracking-widest">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{error}</span>
+                </div>
+            )}
+
             {/* List Section */}
             <div className="flex-1 overflow-y-auto p-3 custom-scrollbar bg-slate-950/20">
-                {watchlist.length > 0 ? (
+                {loading && wishlist.length === 0 ? (
+                    <div className="h-full flex flex-col items-center justify-center space-y-4">
+                        <Loader2 className="w-8 h-8 text-blue-500 animate-spin opacity-50" />
+                        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">Syncing Data...</p>
+                    </div>
+                ) : wishlist.length > 0 ? (
                     <div className="space-y-2">
-                        {watchlist.map(stock => (
+                        {wishlist.map(stock => (
                             <div 
                                 key={stock.symbol} 
-                                onClick={() => navigate(`/charts/${stock.symbol}`)}
+                                onClick={() => handleNavigate(stock.symbol)}
                                 className="bg-slate-900/40 p-4 rounded-xl border border-slate-800/60 flex justify-between items-center group cursor-pointer hover:border-blue-500/30 transition-all hover:bg-slate-800/40"
                             >
                                 <div className="overflow-hidden">
@@ -40,10 +67,7 @@ const WatchlistPanel = () => {
                                     <p className="text-[10px] text-slate-500 uppercase truncate mt-0.5">{stock.name}</p>
                                 </div>
                                 <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        removeFromWatchlist(stock.symbol);
-                                    }}
+                                    onClick={(e) => handleRemove(e, stock.symbol)}
                                     className="opacity-0 group-hover:opacity-100 p-2 hover:bg-red-500/10 text-slate-600 hover:text-red-500 rounded-lg transition-all"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -59,12 +83,6 @@ const WatchlistPanel = () => {
                         <p className="text-slate-500 text-sm font-medium leading-relaxed">
                             Your watchlist is empty.<br />Start by adding some symbols.
                         </p>
-                        <button 
-                            className="mt-6 w-full flex items-center justify-center gap-2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl border border-slate-700 transition-all"
-                        >
-                            <Plus className="w-4 h-4" />
-                            ADD STOCK
-                        </button>
                     </div>
                 )}
             </div>
@@ -72,7 +90,7 @@ const WatchlistPanel = () => {
             {/* Footer Summary */}
             <div className="p-4 border-t border-slate-800 bg-slate-900/50">
                 <p className="text-[10px] text-slate-600 font-bold uppercase text-center tracking-widest">
-                    {watchlist.length} {watchlist.length === 1 ? 'SYMBOL' : 'SYMBOLS'} TRACKED
+                    {wishlist.length} {wishlist.length === 1 ? 'SYMBOL' : 'SYMBOLS'} TRACKED
                 </p>
             </div>
         </div>
