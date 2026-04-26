@@ -5,7 +5,7 @@ import { useUI } from '../context/UIContext';
 import { X, Plus, Trash2, LineChart, Loader2, AlertCircle } from 'lucide-react';
 
 const WatchlistPanel = () => {
-    const { isWatchlistOpen, toggleWatchlist } = useUI();
+    const { isWatchlistOpen, toggleWatchlist, openSearch } = useUI();
     const { items: wishlist, loading, error } = useSelector((state) => state.wishlist);
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -32,9 +32,18 @@ const WatchlistPanel = () => {
                     <LineChart className="w-4 h-4 text-blue-500" />
                     <h2 className="text-sm font-bold uppercase tracking-widest text-slate-400">Watchlist</h2>
                 </div>
-                <button onClick={toggleWatchlist} className="p-1 hover:bg-slate-800 rounded-lg transition-colors">
-                    <X className="w-5 h-5 text-slate-500" />
-                </button>
+                <div className="flex items-center gap-1">
+                    <button 
+                        onClick={openSearch}
+                        className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-blue-400 group"
+                        title="Add Stock"
+                    >
+                        <Plus className="w-5 h-5 transition-transform group-hover:rotate-90" />
+                    </button>
+                    <button onClick={toggleWatchlist} className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-slate-500" />
+                    </button>
+                </div>
             </div>
 
             {/* Error Message */}
