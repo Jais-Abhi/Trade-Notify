@@ -1,0 +1,36 @@
+import express from 'express';
+import dotenv from 'dotenv';
+dotenv.config();
+import cors from 'cors';
+import authRoutes from './src/routes/auth.routes.js';
+import connectDB from './src/config/db.js';
+import marketRoutes from './src/routes/market.routes.js';
+import stockRoutes from './src/routes/stock.routes.js';
+import cookieParser from 'cookie-parser';
+
+// Load environment variables
+
+// Connect to database
+connectDB();
+
+const app = express();
+
+// Middleware
+app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cookieParser());
+app.use(express.json());
+
+// Simple route
+app.get('/api/test', (req, res) => {
+    res.send('API is working');
+});
+
+app.use('/api/auth', authRoutes);
+app.use('/api/market', marketRoutes);
+app.use('/api/stocks', stockRoutes);
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
