@@ -2,11 +2,17 @@ import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, CandlestickSeries } from 'lightweight-charts';
 import api from '../api/axios';
 import { Loader2, AlertCircle } from 'lucide-react';
+import DrawingLayer from './DrawingLayer';
+import DrawingToolbar from './DrawingToolbar';
 
 const ChartContainer = ({ symbol, interval = '5m' }) => {
     const chartContainerRef = useRef();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [activeTool, setActiveTool] = useState(null); // 'trendline' or null
+    const [drawingLines, setDrawingLines] = useState([]); // Array of manual trendlines
+    const [chartInstance, setChartInstance] = useState(null);
+    const [seriesInstance, setSeriesInstance] = useState(null);
 
     useEffect(() => {
         if (!symbol) return;
@@ -61,6 +67,9 @@ const ChartContainer = ({ symbol, interval = '5m' }) => {
                 wickUpColor: '#10b981',
                 wickDownColor: '#ef4444',
             });
+
+            setChartInstance(chart);
+            setSeriesInstance(candlestickSeries);
         };
 
         const fetchData = async () => {
@@ -111,7 +120,11 @@ const ChartContainer = ({ symbol, interval = '5m' }) => {
 
         return () => {
             window.removeEventListener('resize', handleResize);
-            if (chart) chart.remove();
+            if (chart) {
+                chart.remove();
+                setChartInstance(null);
+                setSeriesInstance(null);
+            }
         };
     }, [symbol, interval]);
 
@@ -142,6 +155,22 @@ const ChartContainer = ({ symbol, interval = '5m' }) => {
 
             {/* Chart Canvas */}
             <div ref={chartContainerRef} className="w-full h-full min-h-[600px]" />
+
+            {/* Drawing Layer Overlay */}
+            <DrawingLayer 
+                activeTool={activeTool} 
+                lines={drawingLines}
+                setLines={setDrawingLines}
+                chart={chartInstance}
+                series={seriesInstance}
+            />
+
+            {/* Drawing Tools Sidebar */}
+            <DrawingToolbar 
+                activeTool={activeTool} 
+                setActiveTool={setActiveTool} 
+                onClearAll={() => setDrawingLines([])}
+            />
             
             {/* Attribution */}
             <a 
