@@ -1,5 +1,22 @@
 import mongoose from 'mongoose';
 
+const wishlistItemSchema = new mongoose.Schema({
+    symbol: {
+        type: String,
+        required: true,
+    },
+    name: {
+        type: String,
+        required: true,
+    },
+    series: {
+        type: String,
+    },
+    isin: {
+        type: String,
+    }
+}, { _id: false });
+
 const userSchema = new mongoose.Schema(
     {
         name: {
@@ -15,6 +32,7 @@ const userSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        wishlist: [wishlistItemSchema]
     },
     {
         timestamps: true,
