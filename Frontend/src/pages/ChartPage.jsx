@@ -2,13 +2,50 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ChartContainer from '../components/ChartContainer';
 import api from '../api/axios';
-import { ArrowLeft, Share2, Settings, Maximize2, MoreHorizontal, Loader2 } from 'lucide-react';
+import { ArrowLeft, Share2, Settings, Maximize2, ChevronDown, Loader2, Clock, Star } from 'lucide-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { addToWishlist, removeFromWishlist } from '../features/wishlist/wishlistSlice';
 
 const ChartPage = () => {
     const { symbol } = useParams();
+    const dispatch = useDispatch();
+    const { items: wishlist } = useSelector((state) => state.wishlist);
+    
     const [intervals, setIntervals] = useState(['1m', '5m', '15m', '1h', '1d']);
     const [selectedInterval, setSelectedInterval] = useState('5m');
     const [loadingIntervals, setLoadingIntervals] = useState(true);
+    const [isIntervalOpen, setIsIntervalOpen] = useState(false);
+    const [stockInfo, setStockInfo] = useState(null);
+
+    const isInWishlist = wishlist.some(item => item.symbol === symbol);
+
+    useEffect(() => {
+        const fetchStockInfo = async () => {
+            try {
+                // Fetch full stock info to ensure we have name/series/isin for wishlist
+                const { data } = await api.get(`/stocks/search?q=${symbol}&limit=1`);
+                if (data.success && data.data.length > 0) {
+                    setStockInfo(data.data[0]);
+                }
+            } catch (error) {
+                console.error('Error fetching stock info', error);
+            }
+        };
+        fetchStockInfo();
+    }, [symbol]);
+
+    const handleToggleWishlist = () => {
+        if (isInWishlist) {
+            dispatch(removeFromWishlist(symbol));
+        } else if (stockInfo) {
+            dispatch(addToWishlist({
+                symbol: stockInfo.symbol,
+                name: stockInfo.name,
+                series: stockInfo.series,
+                isin: stockInfo.isin
+            }));
+        }
+    };
 
     useEffect(() => {
         const fetchIntervals = async () => {
@@ -40,29 +77,62 @@ const ChartPage = () => {
                     {/* Symbol Info */}
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-bold tracking-tight text-white">{symbol?.split('.')[0]?.toUpperCase()}</span>
+                        <button 
+                            onClick={handleToggleWishlist}
+                            className={`p-1 hover:bg-slate-900 rounded-lg transition-all ${isInWishlist ? 'text-blue-500' : 'text-slate-600 hover:text-slate-300'}`}
+                            title={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                        >
+                            <Star className={`w-4 h-4 ${isInWishlist ? 'fill-blue-500' : ''}`} />
+                        </button>
                         <span className="text-[10px] font-bold text-slate-500 uppercase bg-slate-900 px-1.5 py-0.5 rounded">NSE</span>
                     </div>
 
                     <div className="h-6 w-[1px] bg-slate-900"></div>
 
-                    {/* Timeframe Selector */}
-                    <div className="flex items-center gap-0.5">
+                    {/* Timeframe Selector Dropdown */}
+                    <div className="relative">
                         {loadingIntervals ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-slate-700 mx-4" />
+                            <div className="flex items-center gap-2 px-3 h-8 bg-slate-900/40 rounded-lg">
+                                <Loader2 className="w-3.5 h-3.5 animate-spin text-slate-700" />
+                            </div>
                         ) : (
-                            intervals.map(tf => (
+                            <>
                                 <button 
-                                    key={tf}
-                                    onClick={() => setSelectedInterval(tf)}
-                                    className={`px-3 h-8 flex items-center justify-center rounded text-xs font-bold transition-all uppercase ${tf === selectedInterval ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-500 hover:bg-slate-900 hover:text-slate-300'}`}
+                                    onClick={() => setIsIntervalOpen(!isIntervalOpen)}
+                                    className={`flex items-center gap-2 px-3 h-8 rounded-lg border transition-all text-xs font-bold uppercase tracking-wider ${isIntervalOpen ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-900/50 border-slate-800/50 text-slate-400 hover:border-slate-700 hover:text-slate-200'}`}
                                 >
-                                    {tf}
+                                    <Clock className="w-3.5 h-3.5" />
+                                    <span>{selectedInterval}</span>
+                                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isIntervalOpen ? 'rotate-180' : ''}`} />
                                 </button>
-                            ))
+
+                                {isIntervalOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setIsIntervalOpen(false)}></div>
+                                        <div className="absolute top-full left-0 mt-2 w-36 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 duration-200 ring-1 ring-white/5">
+                                            <div className="px-3 py-2 mb-1 border-b border-slate-800/50">
+                                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Timeframe</p>
+                                            </div>
+                                            <div className="grid grid-cols-1 gap-0.5">
+                                                {intervals.map(tf => (
+                                                    <button
+                                                        key={tf}
+                                                        onClick={() => {
+                                                            setSelectedInterval(tf);
+                                                            setIsIntervalOpen(false);
+                                                        }}
+                                                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all uppercase flex justify-between items-center ${tf === selectedInterval ? 'bg-blue-600/10 text-blue-400' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-200'}`}
+                                                    >
+                                                        {tf}
+                                                        {tf === selectedInterval && <div className="w-1 h-1 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+                            </>
                         )}
-                        <button className="p-1.5 text-slate-500 hover:text-white">
-                            <MoreHorizontal className="w-4 h-4" />
-                        </button>
                     </div>
 
                     <div className="h-6 w-[1px] bg-slate-900"></div>
