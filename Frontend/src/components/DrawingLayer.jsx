@@ -2,10 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 
 /**
  * DrawingLayer handles the SVG overlay for manual chart drawings.
- * Optimized for maximum performance:
- * - Uses requestAnimationFrame for perfectly synced updates
- * - Direct DOM manipulation (refs) to bypass React's render cycle during chart interactions
- * - Zero jitter during zoom/drag
+ * Optimized for maximum performance and TradingView behavior:
+ * - Uses chart.subscribeClick and chart.subscribeCrosshairMove to keep native crosshair alive
+ * - SVG is pointer-events-none so it NEVER blocks the chart engine
  */
 const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
     const [isDrawing, setIsDrawing] = useState(false);
@@ -18,14 +17,14 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
     // Store mouse position in a ref to avoid React state updates during drawing movement
     const mousePosRef = useRef({ x: 0, y: 0 });
 
-    // Animation loop for perfectly smooth real-time updates
+    // 1. Animation loop for smooth line updates
     useEffect(() => {
         if (!chart || !series || !svgRef.current) return;
         
         let animationFrameId;
 
         const updateAllDrawings = () => {
-            // 1. Update Preview Line if drawing
+            // Update Preview Line if drawing
             if (isDrawing && startPoint && previewLineRef.current) {
                 const p1 = {
                     x: chart.timeScale().timeToCoordinate(startPoint.time),
@@ -45,7 +44,7 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
                 previewLineRef.current.setAttribute('display', 'none');
             }
 
-            // 2. Update all finalized lines in the group
+            // Update all finalized lines
             if (linesGroupRef.current) {
                 const lineElements = linesGroupRef.current.querySelectorAll('[data-line-id]');
                 lineElements.forEach(g => {
@@ -95,66 +94,56 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
         };
     }, [chart, series, lines, isDrawing, startPoint]);
 
-    const pixelToCoords = (e) => {
-        if (!svgRef.current || !chart || !series) return null;
-        const rect = svgRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const time = chart.timeScale().coordinateToTime(x);
-        const price = series.coordinateToPrice(y);
-
-        return { time, price, x, y };
-    };
-
-    const handleMouseDown = (e) => {
-        if (activeTool !== 'trendline' || !chart || !series) return;
-
-        const pos = pixelToCoords(e);
-        if (!pos || pos.time === null || pos.price === null) return;
-        
-        if (!isDrawing) {
-            setStartPoint({ time: pos.time, price: pos.price });
-            setIsDrawing(true);
-        } else {
-            const newLine = {
-                start: startPoint,
-                end: { time: pos.time, price: pos.price },
-                id: Date.now()
-            };
-            setLines(prev => [...prev, newLine]);
+    // 2. Subscribe to chart events for drawing logic
+    useEffect(() => {
+        if (!chart || !series || activeTool !== 'trendline') {
             setIsDrawing(false);
             setStartPoint(null);
+            return;
         }
-    };
 
-    const handleMouseMove = (e) => {
-        if (!svgRef.current) return;
-        const rect = svgRef.current.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        // Update ref instead of state for zero-latency movement
-        mousePosRef.current = { x, y };
-    };
+        const handleChartClick = (param) => {
+            if (!param.point || !param.time) return;
 
-    const handleContextMenu = (e) => {
-        if (isDrawing) {
-            e.preventDefault();
-            setIsDrawing(false);
-            setStartPoint(null);
-        }
-    };
+            const price = series.coordinateToPrice(param.point.y);
+            const time = param.time;
+
+            if (!isDrawing) {
+                // Start drawing
+                setStartPoint({ time, price });
+                setIsDrawing(true);
+            } else {
+                // Finalize drawing
+                const newLine = {
+                    start: startPoint,
+                    end: { time, price },
+                    id: Date.now()
+                };
+                setLines(prev => [...prev, newLine]);
+                setIsDrawing(false);
+                setStartPoint(null);
+            }
+        };
+
+        const handleCrosshairMove = (param) => {
+            if (param.point) {
+                mousePosRef.current = { x: param.point.x, y: param.point.y };
+            }
+        };
+
+        chart.subscribeClick(handleChartClick);
+        chart.subscribeCrosshairMove(handleCrosshairMove);
+
+        return () => {
+            chart.unsubscribeClick(handleChartClick);
+            chart.unsubscribeCrosshairMove(handleCrosshairMove);
+        };
+    }, [chart, series, activeTool, isDrawing, startPoint, setLines]);
 
     return (
         <svg
             ref={svgRef}
-            className={`absolute inset-0 z-30 w-full h-full overflow-hidden ${
-                activeTool === 'trendline' ? 'cursor-crosshair pointer-events-auto' : 'pointer-events-none'
-            }`}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onContextMenu={handleContextMenu}
+            className="absolute inset-0 z-30 w-full h-full overflow-hidden pointer-events-none"
         >
             <defs>
                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -163,7 +152,7 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
                 </filter>
             </defs>
 
-            {/* Finalized Lines Group - Managed imperatively in the animation loop */}
+            {/* Finalized Lines Group */}
             <g ref={linesGroupRef}>
                 {lines.map((line) => (
                     <g key={line.id} data-line-id={line.id} display="none">
@@ -179,7 +168,7 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
                 ))}
             </g>
 
-            {/* Preview Line - Managed imperatively */}
+            {/* Preview Line */}
             <line
                 ref={previewLineRef}
                 stroke="#3b82f6"
@@ -193,4 +182,5 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
 };
 
 export default DrawingLayer;
+
 
