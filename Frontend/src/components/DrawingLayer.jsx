@@ -1,38 +1,100 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 /**
  * DrawingLayer handles the SVG overlay for manual chart drawings.
- * Now synchronized with Price and Time coordinates for TradingView behavior.
+ * Optimized for maximum performance:
+ * - Uses requestAnimationFrame for perfectly synced updates
+ * - Direct DOM manipulation (refs) to bypass React's render cycle during chart interactions
+ * - Zero jitter during zoom/drag
  */
 const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState(null); // { time, price }
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 }); // Pixel coordinates for preview
-    const [renderTrigger, setRenderTrigger] = useState(0); // Dummy state to force re-render on chart move
+    
     const svgRef = useRef(null);
+    const previewLineRef = useRef(null);
+    const linesGroupRef = useRef(null);
+    
+    // Store mouse position in a ref to avoid React state updates during drawing movement
+    const mousePosRef = useRef({ x: 0, y: 0 });
 
-    // Animation loop for perfectly smooth real-time updates during interactions
+    // Animation loop for perfectly smooth real-time updates
     useEffect(() => {
-        if (!chart || !series) return;
+        if (!chart || !series || !svgRef.current) return;
         
         let animationFrameId;
 
-        const syncWithChart = () => {
-            // Trigger React re-render every frame to catch price scale drags/autoscales
-            setRenderTrigger(prev => prev + 1);
-            animationFrameId = requestAnimationFrame(syncWithChart);
+        const updateAllDrawings = () => {
+            // 1. Update Preview Line if drawing
+            if (isDrawing && startPoint && previewLineRef.current) {
+                const p1 = {
+                    x: chart.timeScale().timeToCoordinate(startPoint.time),
+                    y: series.priceToCoordinate(startPoint.price)
+                };
+                
+                if (p1.x !== null && p1.y !== null) {
+                    previewLineRef.current.setAttribute('x1', p1.x);
+                    previewLineRef.current.setAttribute('y1', p1.y);
+                    previewLineRef.current.setAttribute('x2', mousePosRef.current.x);
+                    previewLineRef.current.setAttribute('y2', mousePosRef.current.y);
+                    previewLineRef.current.setAttribute('display', 'block');
+                } else {
+                    previewLineRef.current.setAttribute('display', 'none');
+                }
+            } else if (previewLineRef.current) {
+                previewLineRef.current.setAttribute('display', 'none');
+            }
+
+            // 2. Update all finalized lines in the group
+            if (linesGroupRef.current) {
+                const lineElements = linesGroupRef.current.querySelectorAll('[data-line-id]');
+                lineElements.forEach(g => {
+                    const id = g.getAttribute('data-line-id');
+                    const lineData = lines.find(l => l.id.toString() === id);
+                    if (!lineData) return;
+
+                    const p1 = {
+                        x: chart.timeScale().timeToCoordinate(lineData.start.time),
+                        y: series.priceToCoordinate(lineData.start.price)
+                    };
+                    const p2 = {
+                        x: chart.timeScale().timeToCoordinate(lineData.end.time),
+                        y: series.priceToCoordinate(lineData.end.price)
+                    };
+
+                    const line = g.querySelector('line');
+                    const c1 = g.querySelector('.c1');
+                    const c2 = g.querySelector('.c2');
+
+                    if (p1.x !== null && p1.y !== null && p2.x !== null && p2.y !== null) {
+                        g.setAttribute('display', 'block');
+                        line.setAttribute('x1', p1.x);
+                        line.setAttribute('y1', p1.y);
+                        line.setAttribute('x2', p2.x);
+                        line.setAttribute('y2', p2.y);
+                        
+                        c1.setAttribute('cx', p1.x);
+                        c1.setAttribute('cy', p1.y);
+                        c2.setAttribute('cx', p2.x);
+                        c2.setAttribute('cy', p2.y);
+                    } else {
+                        g.setAttribute('display', 'none');
+                    }
+                });
+            }
+
+            animationFrameId = requestAnimationFrame(updateAllDrawings);
         };
 
-        animationFrameId = requestAnimationFrame(syncWithChart);
+        animationFrameId = requestAnimationFrame(updateAllDrawings);
 
         return () => {
             if (animationFrameId) {
                 cancelAnimationFrame(animationFrameId);
             }
         };
-    }, [chart, series]);
+    }, [chart, series, lines, isDrawing, startPoint]);
 
-    // Helper to convert pixel to chart coordinates
     const pixelToCoords = (e) => {
         if (!svgRef.current || !chart || !series) return null;
         const rect = svgRef.current.getBoundingClientRect();
@@ -45,14 +107,6 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
         return { time, price, x, y };
     };
 
-    // Helper to convert chart coordinates back to pixels for rendering
-    const coordsToPixel = (point) => {
-        if (!chart || !series || !point) return { x: -100, y: -100 };
-        const x = chart.timeScale().timeToCoordinate(point.time);
-        const y = series.priceToCoordinate(point.price);
-        return { x, y };
-    };
-
     const handleMouseDown = (e) => {
         if (activeTool !== 'trendline' || !chart || !series) return;
 
@@ -60,11 +114,9 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
         if (!pos || pos.time === null || pos.price === null) return;
         
         if (!isDrawing) {
-            // First click: Start point (Store Time + Price)
             setStartPoint({ time: pos.time, price: pos.price });
             setIsDrawing(true);
         } else {
-            // Second click: Finalize (Store Time + Price)
             const newLine = {
                 start: startPoint,
                 end: { time: pos.time, price: pos.price },
@@ -77,12 +129,13 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
     };
 
     const handleMouseMove = (e) => {
-        if (activeTool !== 'trendline') return;
+        if (!svgRef.current) return;
+        const rect = svgRef.current.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
         
-        if (isDrawing) {
-            const pos = pixelToCoords(e);
-            if (pos) setMousePos({ x: pos.x, y: pos.y });
-        }
+        // Update ref instead of state for zero-latency movement
+        mousePosRef.current = { x, y };
     };
 
     const handleContextMenu = (e) => {
@@ -96,8 +149,7 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
     return (
         <svg
             ref={svgRef}
-            key={renderTrigger} // Optional: help React distinguish render cycles on move
-            className={`absolute inset-0 z-30 w-full h-full overflow-hidden transition-opacity duration-300 ${
+            className={`absolute inset-0 z-30 w-full h-full overflow-hidden ${
                 activeTool === 'trendline' ? 'cursor-crosshair pointer-events-auto' : 'pointer-events-none'
             }`}
             onMouseDown={handleMouseDown}
@@ -111,50 +163,34 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
                 </filter>
             </defs>
 
-            {/* Render Finalized Trendlines (Converted back to Pixels) */}
-            {lines.map((line) => {
-                const p1 = coordsToPixel(line.start);
-                const p2 = coordsToPixel(line.end);
-
-                // Don't render if coordinates are null (off-chart or invalid)
-                if (p1.x === null || p1.y === null || p2.x === null || p2.y === null) return null;
-
-                return (
-                    <g key={line.id}>
+            {/* Finalized Lines Group - Managed imperatively in the animation loop */}
+            <g ref={linesGroupRef}>
+                {lines.map((line) => (
+                    <g key={line.id} data-line-id={line.id} display="none">
                         <line
-                            x1={p1.x}
-                            y1={p1.y}
-                            x2={p2.x}
-                            y2={p2.y}
                             stroke="#3b82f6"
                             strokeWidth="2"
                             strokeLinecap="round"
                             filter="url(#glow)"
                         />
-                        <circle cx={p1.x} cy={p1.y} r="3" fill="#3b82f6" />
-                        <circle cx={p2.x} cy={p2.y} r="3" fill="#3b82f6" />
+                        <circle className="c1" r="3" fill="#3b82f6" />
+                        <circle className="c2" r="3" fill="#3b82f6" />
                     </g>
-                );
-            })}
+                ))}
+            </g>
 
-            {/* Render Preview Line */}
-            {isDrawing && startPoint && (() => {
-                const p1 = coordsToPixel(startPoint);
-                return (
-                    <line
-                        x1={p1.x}
-                        y1={p1.y}
-                        x2={mousePos.x}
-                        y2={mousePos.y}
-                        stroke="#3b82f6"
-                        strokeWidth="1.5"
-                        strokeDasharray="4, 4"
-                        opacity="0.6"
-                    />
-                );
-            })()}
+            {/* Preview Line - Managed imperatively */}
+            <line
+                ref={previewLineRef}
+                stroke="#3b82f6"
+                strokeWidth="1.5"
+                strokeDasharray="4, 4"
+                opacity="0.6"
+                display="none"
+            />
         </svg>
     );
 };
 
 export default DrawingLayer;
+

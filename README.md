@@ -29,33 +29,40 @@ TradeNotify is a high-performance, full-stack trading dashboard designed for rea
 - **Database**: MongoDB (via Mongoose)
 - **Authentication**: JWT & BcryptJS
 - **API Clients**: Axios
-- **Middleware**: CORS, Cookie-Parser, Dotenv
+- **External API**: Yahoo Finance API
 
-## 📈 Project Flow
+## 📉 Charting Implementation
 
-1.  **Onboarding**: Users start at the **Login** or **Register** page. Authentication is handled via JWT, which is stored securely and loaded on app initialization via a custom `useAuth` hook.
-2.  **Command Center (Dashboard)**: After logging in, users are greeted by a professional landing zone. From here, they can see their **Wishlist** or use the search experience to find new symbols.
-3.  **Analysis (Chart Page)**:
-    - Launching a chart takes the user to `/charts/:symbol`.
-    - The `ChartContainer` fetches historical candle data from the backend.
-    - Users can switch intervals via a custom dropdown, which triggers a re-fetch and re-render of the chart.
-    - The **Drawing Layer** allows users to select tools (like trendlines) and draw directly on top of the market data.
-4.  **Portfolio Management**: Users can add or remove stocks from their **Wishlist** directly from the chart page or dashboard, with state managed globally via Redux.
+### How Charts are Created
+The application utilizes the **Lightweight Charts API** by TradingView. In `ChartContainer.jsx`:
+1.  **Initialization**: A `createChart` instance is attached to a DOM ref. Custom colors, grid lines, and crosshair styles are applied to match the Obsidian Architect theme.
+2.  **Series Management**: A `CandlestickSeries` is added to the chart instance.
+3.  **Data Fetching**: Historical candle data is fetched from the internal `/api/market/candles` endpoint.
+4.  **Data Transformation**: Raw timestamps and price data are cleaned and sorted before being passed to `series.setData()`.
+5.  **Responsiveness**: A `ResizeObserver` (via `useEffect` resize listener) ensures the chart always fills its container.
 
-## 📦 Key Packages & Implementations
+### Trendlines & Drawings
+TradeNotify features a custom-built **Imperative Drawing Engine** (`DrawingLayer.jsx`) that sits as an SVG overlay on top of the chart:
+- **Synchronization**: To prevent "jitter" during zoom/drag, we use `requestAnimationFrame`. This loop calculates the exact pixel coordinates for every drawing in every frame using `chart.timeScale().timeToCoordinate(time)` and `series.priceToCoordinate(price)`.
+- **Imperative Rendering**: Instead of React state, we use **Refs** to directly manipulate SVG attributes (`x1`, `y1`, `x2`, `y2`). This bypasses React's reconciliation for maximum performance (0ms latency).
+- **Coordinate Persistence**: Drawings are stored as `{ time, price }` pairs. This ensures they stay anchored to the correct candles even when you switch timeframes or scroll through history.
 
-### Lightweight Charts
-The heart of the application is the `lightweight-charts` integration in `ChartContainer.jsx`. It features:
-- Solid background layouts for a premium dark look.
-- Custom crosshair styles and grid configurations.
-- Responsive resizing using `ResizeObserver` logic.
-- Integration with a custom `DrawingLayer` for persistent technical analysis.
+## 📡 API Reference
 
-### Custom Drawing Layer
-Unlike standard chart implementations, TradeNotify includes a custom SVG/Canvas-based `DrawingLayer` that:
-- Captures mouse events on the chart area.
-- Translates coordinates into time/price values.
-- Allows for "active tool" selection (e.g., Trendlines).
+### External Data Source
+All market data is fetched in real-time from the **Yahoo Finance API** (`query1.finance.yahoo.com`). The backend cleanses this data, handling market halts and null values to ensure chart stability.
+
+### Backend Endpoints
+| Category | Endpoint | Method | Description |
+| :--- | :--- | :--- | :--- |
+| **Auth** | `/api/auth/register` | `POST` | Create a new user account |
+| **Auth** | `/api/auth/login` | `POST` | Authenticate and receive JWT |
+| **Auth** | `/api/auth/me` | `GET` | Get current user profile (Protected) |
+| **Market** | `/api/market/candles` | `GET` | Fetch historical OHLC data |
+| **Market** | `/api/market/intervals`| `GET` | Get supported timeframes |
+| **Stocks** | `/api/stocks/search` | `GET` | Search for symbols (NSE/BSE) |
+| **Wishlist**| `/api/wishlist` | `GET` | Retrieve user's watchlist |
+| **Wishlist**| `/api/wishlist` | `POST` | Add symbol to watchlist |
 
 ## 🛠️ Setup & Installation
 
@@ -65,8 +72,8 @@ Unlike standard chart implementations, TradeNotify includes a custom SVG/Canvas-
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/your-repo/TradeNotify.git
-cd TradeNotify
+git clone https://github.com/Jais-Abhi/Trade-Notify.git
+cd Trade-Notify
 ```
 
 ### 2. Backend Setup
@@ -98,3 +105,4 @@ npm run dev
 ---
 
 *Developed with ❤️ by Abhishek Jaiswal*
+
