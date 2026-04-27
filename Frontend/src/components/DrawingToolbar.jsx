@@ -7,7 +7,10 @@ import { MousePointer2, TrendingUp, Eraser } from 'lucide-react';
  */
 const DrawingToolbar = ({ activeTool, setActiveTool, onClearAll }) => {
     return (
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-3 p-1.5 bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/5">
+        <div 
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-3 p-1.5 bg-slate-900/90 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.5)] ring-1 ring-white/5"
+            onMouseDown={(e) => e.stopPropagation()} // Prevent bubbling to chart parent
+        >
             {/* Cursor Mode */}
             <button 
                 onClick={() => setActiveTool(null)}

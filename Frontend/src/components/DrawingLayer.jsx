@@ -2,9 +2,10 @@ import React, { useState, useRef, useEffect } from 'react';
 
 /**
  * DrawingLayer handles the SVG overlay for manual chart drawings.
- * Optimized for maximum performance and TradingView behavior:
- * - Uses chart.subscribeClick and chart.subscribeCrosshairMove to keep native crosshair alive
- * - SVG is pointer-events-none so it NEVER blocks the chart engine
+ * Optimized for maximum performance:
+ * - Uses requestAnimationFrame for perfectly synced updates
+ * - Direct DOM manipulation (refs) to bypass React's render cycle during chart interactions
+ * - Zero jitter during zoom/drag
  */
 const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
     const [isDrawing, setIsDrawing] = useState(false);
@@ -14,17 +15,26 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
     const previewLineRef = useRef(null);
     const linesGroupRef = useRef(null);
     
-    // Store mouse position in a ref to avoid React state updates during drawing movement
+    // Store mouse position in a ref to avoid React state updates
     const mousePosRef = useRef({ x: 0, y: 0 });
 
-    // 1. Animation loop for smooth line updates
+    // Helper to convert pixel to chart coordinates
+    const pixelToCoords = (x, y) => {
+        if (!chart || !series) return null;
+        const time = chart.timeScale().coordinateToTime(x);
+        const price = series.coordinateToPrice(y);
+        return { time, price, x, y };
+    };
+
+    // Animation loop for perfectly smooth real-time updates
     useEffect(() => {
         if (!chart || !series || !svgRef.current) return;
         
+        const parent = svgRef.current.parentElement;
         let animationFrameId;
 
         const updateAllDrawings = () => {
-            // Update Preview Line if drawing
+            // 1. Update Preview Line if drawing
             if (isDrawing && startPoint && previewLineRef.current) {
                 const p1 = {
                     x: chart.timeScale().timeToCoordinate(startPoint.time),
@@ -44,7 +54,7 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
                 previewLineRef.current.setAttribute('display', 'none');
             }
 
-            // Update all finalized lines
+            // 2. Update all finalized lines in the group
             if (linesGroupRef.current) {
                 const lineElements = linesGroupRef.current.querySelectorAll('[data-line-id]');
                 lineElements.forEach(g => {
@@ -85,38 +95,30 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
             animationFrameId = requestAnimationFrame(updateAllDrawings);
         };
 
-        animationFrameId = requestAnimationFrame(updateAllDrawings);
+        // --- Event Listeners on Parent to allow "Pointer Events Pass-Through" ---
+        // This allows the chart's native crosshair tags to show while we still catch the clicks.
+        const onMouseDown = (e) => {
+            // Ignore if clicking on any UI element (buttons, toolbar, etc.)
+            if (e.target.closest('button') || e.target.closest('.z-40') || e.target.closest('.z-50')) return;
 
-        return () => {
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-        };
-    }, [chart, series, lines, isDrawing, startPoint]);
+            if (activeTool !== 'trendline' || !chart || !series) return;
+            // Only handle left click
+            if (e.button !== 0) return;
 
-    // 2. Subscribe to chart events for drawing logic
-    useEffect(() => {
-        if (!chart || !series || activeTool !== 'trendline') {
-            setIsDrawing(false);
-            setStartPoint(null);
-            return;
-        }
+            const rect = parent.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
 
-        const handleChartClick = (param) => {
-            if (!param.point || !param.time) return;
-
-            const price = series.coordinateToPrice(param.point.y);
-            const time = param.time;
-
+            const pos = pixelToCoords(x, y);
+            if (!pos || pos.time === null || pos.price === null) return;
+            
             if (!isDrawing) {
-                // Start drawing
-                setStartPoint({ time, price });
+                setStartPoint({ time: pos.time, price: pos.price });
                 setIsDrawing(true);
             } else {
-                // Finalize drawing
                 const newLine = {
                     start: startPoint,
-                    end: { time, price },
+                    end: { time: pos.time, price: pos.price },
                     id: Date.now()
                 };
                 setLines(prev => [...prev, newLine]);
@@ -125,20 +127,35 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
             }
         };
 
-        const handleCrosshairMove = (param) => {
-            if (param.point) {
-                mousePosRef.current = { x: param.point.x, y: param.point.y };
+        const onMouseMove = (e) => {
+            const rect = parent.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            mousePosRef.current = { x, y };
+        };
+
+        const onContextMenu = (e) => {
+            if (isDrawing) {
+                e.preventDefault();
+                setIsDrawing(false);
+                setStartPoint(null);
             }
         };
 
-        chart.subscribeClick(handleChartClick);
-        chart.subscribeCrosshairMove(handleCrosshairMove);
+        // Attach listeners to parent container
+        parent.addEventListener('mousedown', onMouseDown);
+        window.addEventListener('mousemove', onMouseMove);
+        parent.addEventListener('contextmenu', onContextMenu);
+
+        animationFrameId = requestAnimationFrame(updateAllDrawings);
 
         return () => {
-            chart.unsubscribeClick(handleChartClick);
-            chart.unsubscribeCrosshairMove(handleCrosshairMove);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            parent.removeEventListener('mousedown', onMouseDown);
+            window.removeEventListener('mousemove', onMouseMove);
+            parent.removeEventListener('contextmenu', onContextMenu);
         };
-    }, [chart, series, activeTool, isDrawing, startPoint, setLines]);
+    }, [chart, series, lines, isDrawing, startPoint, activeTool]);
 
     return (
         <svg
@@ -182,5 +199,4 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
 };
 
 export default DrawingLayer;
-
 

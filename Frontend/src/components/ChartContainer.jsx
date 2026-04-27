@@ -38,18 +38,16 @@ const ChartContainer = ({ symbol, interval = '5m' }) => {
                 width: chartContainerRef.current.clientWidth,
                 height: 600,
                 crosshair: {
-                    mode: 1, // CrosshairMode.Normal
+                    mode: 0,
                     vertLine: {
                         width: 1,
-                        color: '#475569',
+                        color: '#334155',
                         style: 3,
-                        labelBackgroundColor: '#1e293b',
                     },
                     horzLine: {
                         width: 1,
-                        color: '#475569',
+                        color: '#334155',
                         style: 3,
-                        labelBackgroundColor: '#1e293b',
                     },
                 },
                 timeScale: {
