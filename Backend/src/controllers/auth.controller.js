@@ -78,7 +78,8 @@ export const loginUser = async (req, res) => {
         if (user && (await bcrypt.compare(password, user.password))) {
             sendTokenResponse(user, 200, res);
         } else {
-            res.status(400).json({ message: 'Invalid credentials' });
+            console.log(email, password);
+           return res.status(400).json({ message: 'Invalid credentials' });
         }
     } catch (error) {
         res.status(500).json({ message: 'Server Error', error: error.message });

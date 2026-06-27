@@ -10,6 +10,11 @@ const Login = () => {
     const { login, user, loading, error, resetError } = useAuth();
     const navigate = useNavigate();
 
+    const getErrorText = (err) => {
+        if (!err) return '';
+        return typeof err === 'string' ? err : err.message || JSON.stringify(err);
+    };
+
     useEffect(() => {
         if (user) navigate('/');
         return () => resetError();
@@ -17,6 +22,7 @@ const Login = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        resetError();
         login({ email, password });
     };
 
@@ -29,7 +35,7 @@ const Login = () => {
 
             {error && (
                 <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 rounded-lg flex items-center">
-                    <p className="text-red-400 text-sm font-medium">{error}</p>
+                    <p className="text-red-400 text-sm font-medium">{getErrorText(error)}</p>
                 </div>
             )}
 

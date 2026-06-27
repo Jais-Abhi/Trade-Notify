@@ -1,6 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import api from '../../api/axios';
 
+const getErrorMessage = (error) => {
+    if (error?.response?.data?.message) return error.response.data.message;
+    if (error?.response?.data?.error) return error.response.data.error;
+    if (typeof error === 'string') return error;
+    return error?.message || 'Something went wrong';
+};
+
 // Async thunks
 export const registerUser = createAsyncThunk(
     'auth/register',
@@ -9,9 +16,7 @@ export const registerUser = createAsyncThunk(
             const response = await api.post('/auth/register', userData);
             return response.data;
         } catch (error) {
-            return thunkAPI.rejectWithValue(
-                error.response?.data?.message || error.message
-            );
+            return thunkAPI.rejectWithValue(getErrorMessage(error));
         }
     }
 );
@@ -23,9 +28,7 @@ export const loginUser = createAsyncThunk(
             const response = await api.post('/auth/login', userData);
             return response.data;
         } catch (error) {
-            return thunkAPI.rejectWithValue(
-                error.response?.data?.message || error.message
-            );
+            return thunkAPI.rejectWithValue(getErrorMessage(error));
         }
     }
 );
@@ -81,7 +84,7 @@ const authSlice = createSlice({
             })
             .addCase(registerUser.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload || action.error.message || 'Something went wrong';
             })
             // Login
             .addCase(loginUser.pending, (state) => {
@@ -94,7 +97,7 @@ const authSlice = createSlice({
             })
             .addCase(loginUser.rejected, (state, action) => {
                 state.loading = false;
-                state.error = action.payload;
+                state.error = action.payload || action.error.message || 'Something went wrong';
             })
             // Load User (Check Auth)
             .addCase(loadUser.pending, (state) => {
