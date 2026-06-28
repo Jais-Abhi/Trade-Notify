@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ChartContainer from '../components/ChartContainer';
 import api from '../api/axios';
-import { ArrowLeft, Share2, Settings, Maximize2, ChevronDown, Loader2, Clock, Star, Save, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Share2, Settings, Maximize2, ChevronDown, Loader2, Clock, Star, Save, CheckCircle2, XCircle, Undo2, Redo2 } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToWishlist, removeFromWishlist } from '../features/wishlist/wishlistSlice';
 
@@ -18,6 +18,9 @@ const ChartPage = () => {
     const [stockInfo, setStockInfo] = useState(null);
     
     const [drawingLines, setDrawingLines] = useState([]);
+    const [historyPast, setHistoryPast] = useState([]);
+    const [historyFuture, setHistoryFuture] = useState([]);
+    const [selectedDrawingId, setSelectedDrawingId] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState(null);
 
@@ -30,10 +33,52 @@ const ChartPage = () => {
         }, 3000);
     };
 
+    // Helper to update drawings with a new history entry (e.g. create, delete, clear)
+    const updateDrawingLinesWithHistory = (newLinesOrUpdater) => {
+        setDrawingLines(prev => {
+            const next = typeof newLinesOrUpdater === 'function' ? newLinesOrUpdater(prev) : newLinesOrUpdater;
+            setHistoryPast(past => [...past, prev]);
+            setHistoryFuture([]);
+            return next;
+        });
+    };
+
+    // Save history snapshot before drag begins
+    const handleDragStart = (linesBeforeDrag) => {
+        setHistoryPast(past => [...past, linesBeforeDrag]);
+        setHistoryFuture([]);
+    };
+
+    const handleUndo = () => {
+        if (historyPast.length === 0) return;
+        const previous = historyPast[historyPast.length - 1];
+        const newPast = historyPast.slice(0, -1);
+        
+        setHistoryFuture(prev => [drawingLines, ...prev]);
+        setHistoryPast(newPast);
+        setDrawingLines(previous);
+        setSelectedDrawingId(null);
+    };
+
+    const handleRedo = () => {
+        if (historyFuture.length === 0) return;
+        const next = historyFuture[0];
+        const newFuture = historyFuture.slice(1);
+
+        setHistoryPast(prev => [...prev, drawingLines]);
+        setHistoryFuture(newFuture);
+        setDrawingLines(next);
+        setSelectedDrawingId(null);
+    };
+
     // Fetch drawings on symbol/interval change
     useEffect(() => {
         if (!symbol) return;
+        // Reset all drawing state when navigating to a new chart
         setDrawingLines([]);
+        setHistoryPast([]);
+        setHistoryFuture([]);
+        setSelectedDrawingId(null);
 
         const fetchDrawings = async () => {
             try {
@@ -216,6 +261,23 @@ const ChartPage = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleUndo}
+                        disabled={historyPast.length === 0}
+                        className="p-2 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+                        title="Undo"
+                    >
+                        <Undo2 className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={handleRedo}
+                        disabled={historyFuture.length === 0}
+                        className="p-2 text-slate-400 hover:text-white disabled:opacity-30 disabled:hover:text-slate-400 transition-colors"
+                        title="Redo"
+                    >
+                        <Redo2 className="w-4 h-4" />
+                    </button>
+                    <div className="h-6 w-[1px] bg-slate-900 mx-1"></div>
                     <button 
                         onClick={handleSaveDrawings}
                         disabled={isSaving}
@@ -250,6 +312,10 @@ const ChartPage = () => {
                     interval={selectedInterval} 
                     drawingLines={drawingLines}
                     setDrawingLines={setDrawingLines}
+                    updateDrawingLinesWithHistory={updateDrawingLinesWithHistory}
+                    selectedDrawingId={selectedDrawingId}
+                    setSelectedDrawingId={setSelectedDrawingId}
+                    onDragStart={handleDragStart}
                 />
             </main>
 

@@ -5,7 +5,16 @@ import { Loader2, AlertCircle } from 'lucide-react';
 import DrawingLayer from './DrawingLayer';
 import DrawingToolbar from './DrawingToolbar';
 
-const ChartContainer = ({ symbol, interval = '5m', drawingLines, setDrawingLines }) => {
+const ChartContainer = ({ 
+    symbol, 
+    interval = '5m', 
+    drawingLines, 
+    setDrawingLines,
+    updateDrawingLinesWithHistory,
+    selectedDrawingId,
+    setSelectedDrawingId,
+    onDragStart
+}) => {
     const chartContainerRef = useRef();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -128,7 +137,7 @@ const ChartContainer = ({ symbol, interval = '5m', drawingLines, setDrawingLines
     }, [symbol, interval]);
 
     return (
-        <div className="w-full h-full relative group bg-slate-950 rounded-xl overflow-hidden border border-slate-900 shadow-2xl">
+        <div className="w-full h-full relative group bg-slate-950 rounded-xl overflow-hidden border border-slate-900 shadow-2xl" style={{ cursor: 'crosshair' }}>
             {/* Loading Overlay */}
             {loading && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/80 backdrop-blur-sm">
@@ -160,6 +169,10 @@ const ChartContainer = ({ symbol, interval = '5m', drawingLines, setDrawingLines
                 activeTool={activeTool} 
                 lines={drawingLines}
                 setLines={setDrawingLines}
+                updateDrawingLinesWithHistory={updateDrawingLinesWithHistory}
+                selectedDrawingId={selectedDrawingId}
+                setSelectedDrawingId={setSelectedDrawingId}
+                onDragStart={onDragStart}
                 chart={chartInstance}
                 series={seriesInstance}
             />
@@ -168,7 +181,7 @@ const ChartContainer = ({ symbol, interval = '5m', drawingLines, setDrawingLines
             <DrawingToolbar 
                 activeTool={activeTool} 
                 setActiveTool={setActiveTool} 
-                onClearAll={() => setDrawingLines([])}
+                onClearAll={() => updateDrawingLinesWithHistory([])}
             />
             
             {/* Attribution */}
