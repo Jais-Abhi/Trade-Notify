@@ -34,6 +34,20 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
         let animationFrameId;
 
         const updateAllDrawings = () => {
+            // Align the SVG overlay with the main canvas (chart pane)
+            const mainCanvas = parent?.querySelector('canvas');
+            if (mainCanvas && svgRef.current) {
+                const mainRect = mainCanvas.getBoundingClientRect();
+                const parentRect = parent.getBoundingClientRect();
+                const left = mainRect.left - parentRect.left;
+                const top = mainRect.top - parentRect.top;
+                
+                svgRef.current.style.left = `${left}px`;
+                svgRef.current.style.top = `${top}px`;
+                svgRef.current.style.width = `${mainRect.width}px`;
+                svgRef.current.style.height = `${mainRect.height}px`;
+            }
+
             // 1. Update Preview Line if drawing
             if (isDrawing && startPoint && previewLineRef.current) {
                 const p1 = {
@@ -105,7 +119,10 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
             // Only handle left click
             if (e.button !== 0) return;
 
-            const rect = parent.getBoundingClientRect();
+            const mainCanvas = parent.querySelector('canvas');
+            if (!mainCanvas) return;
+
+            const rect = mainCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
@@ -128,7 +145,9 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
         };
 
         const onMouseMove = (e) => {
-            const rect = parent.getBoundingClientRect();
+            const mainCanvas = parent.querySelector('canvas');
+            if (!mainCanvas) return;
+            const rect = mainCanvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             mousePosRef.current = { x, y };
@@ -160,7 +179,7 @@ const DrawingLayer = ({ activeTool, lines, setLines, chart, series }) => {
     return (
         <svg
             ref={svgRef}
-            className="absolute inset-0 z-30 w-full h-full overflow-hidden pointer-events-none"
+            className="absolute z-30 overflow-hidden pointer-events-none"
         >
             <defs>
                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
