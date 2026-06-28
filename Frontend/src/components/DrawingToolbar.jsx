@@ -14,13 +14,13 @@ const DrawingToolbar = ({ activeTool, setActiveTool, onClearAll }) => {
             {/* Cursor Mode */}
             <button 
                 onClick={() => setActiveTool(null)}
-                className={`p-2.5 rounded-xl transition-all duration-200 group relative ${
+                className={`p-2.5 rounded-xl transition-all duration-200 group/btn relative ${
                     !activeTool ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'
                 }`}
                 title="Cursor (Select)"
             >
                 <MousePointer2 className="w-5 h-5" />
-                <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-[10px] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-[10px] text-white rounded opacity-0 invisible group-hover/btn:opacity-100 group-hover/btn:visible transition-all pointer-events-none whitespace-nowrap z-50">
                     Cursor (V)
                 </span>
             </button>
@@ -30,13 +30,13 @@ const DrawingToolbar = ({ activeTool, setActiveTool, onClearAll }) => {
             {/* Trendline Tool */}
             <button 
                 onClick={() => setActiveTool('trendline')}
-                className={`p-2.5 rounded-xl transition-all duration-200 group relative ${
+                className={`p-2.5 rounded-xl transition-all duration-200 group/btn relative ${
                     activeTool === 'trendline' ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'
                 }`}
                 title="Trendline"
             >
                 <TrendingUp className="w-5 h-5" />
-                <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-[10px] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-[10px] text-white rounded opacity-0 invisible group-hover/btn:opacity-100 group-hover/btn:visible transition-all pointer-events-none whitespace-nowrap z-50">
                     Trendline (T)
                 </span>
             </button>
@@ -46,11 +46,11 @@ const DrawingToolbar = ({ activeTool, setActiveTool, onClearAll }) => {
             {/* Clear Button (Utility) */}
             <button 
                 onClick={onClearAll}
-                className="p-2.5 rounded-xl text-slate-600 hover:bg-red-500/10 hover:text-red-500 transition-all duration-200 group relative"
+                className="p-2.5 rounded-xl text-slate-600 hover:bg-red-500/10 hover:text-red-500 transition-all duration-200 group/btn relative"
                 title="Clear All"
             >
                 <Eraser className="w-5 h-5" />
-                <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-[10px] text-white rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                <span className="absolute left-full ml-3 px-2 py-1 bg-slate-800 text-[10px] text-white rounded opacity-0 invisible group-hover/btn:opacity-100 group-hover/btn:visible transition-all pointer-events-none whitespace-nowrap z-50">
                     Clear All Drawings
                 </span>
             </button>
