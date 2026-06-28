@@ -14,6 +14,97 @@ const ChartContainer = ({ symbol, interval = '5m' }) => {
     const [chartInstance, setChartInstance] = useState(null);
     const [seriesInstance, setSeriesInstance] = useState(null);
 
+    const lastSavedLinesRef = useRef([]);
+
+    // Fetch drawings on symbol/interval change
+    useEffect(() => {
+        if (!symbol) return;
+
+        setDrawingLines([]);
+        lastSavedLinesRef.current = [];
+
+        const fetchDrawings = async () => {
+            try {
+                const response = await api.get(`/drawings?symbol=${symbol}&interval=${interval}`);
+                if (response.data && response.data.success) {
+                    const loaded = response.data.data.map(d => {
+                        if (d.tool === 'trendline' && d.points && d.points.length >= 2) {
+                            return {
+                                id: d.id,
+                                start: d.points[0],
+                                end: d.points[1]
+                            };
+                        }
+                        return null;
+                    }).filter(Boolean);
+                    
+                    setDrawingLines(loaded);
+                    lastSavedLinesRef.current = loaded;
+                }
+            } catch (err) {
+                console.error('Failed to load drawings', err);
+            }
+        };
+
+        fetchDrawings();
+    }, [symbol, interval]);
+
+    // Save drawings on local change
+    useEffect(() => {
+        const linesAreEqual = (a, b) => {
+            if (a.length !== b.length) return false;
+            return a.every((lineA, index) => {
+                const lineB = b[index];
+                return lineA.id.toString() === lineB.id.toString() &&
+                       lineA.start?.time === lineB.start?.time &&
+                       lineA.start?.price === lineB.start?.price &&
+                       lineA.end?.time === lineB.end?.time &&
+                       lineA.end?.price === lineB.end?.price;
+            });
+        };
+
+        if (linesAreEqual(drawingLines, lastSavedLinesRef.current)) {
+            return;
+        }
+
+        const syncDrawings = async () => {
+            try {
+                if (drawingLines.length === 0) {
+                    await api.delete(`/drawings?symbol=${symbol}&interval=${interval}`);
+                    console.log('Drawings deleted from backend successfully');
+                } else {
+                    const payload = {
+                        symbol,
+                        interval,
+                        drawings: drawingLines.map(line => ({
+                            id: line.id.toString(),
+                            tool: 'trendline',
+                            points: [
+                                { time: line.start.time, price: line.start.price },
+                                { time: line.end.time, price: line.end.price }
+                            ],
+                            style: {
+                                color: '#3b82f6',
+                                width: 2,
+                                lineStyle: 'solid'
+                            },
+                            options: {},
+                            locked: false,
+                            visible: true
+                        }))
+                    };
+                    await api.post('/drawings/save', payload);
+                    console.log('Drawings saved to backend successfully');
+                }
+                lastSavedLinesRef.current = drawingLines;
+            } catch (err) {
+                console.error('Error syncing drawings with backend:', err);
+            }
+        };
+
+        syncDrawings();
+    }, [drawingLines, symbol, interval]);
+
     useEffect(() => {
         if (!symbol) return;
 
