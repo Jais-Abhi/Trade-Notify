@@ -48,7 +48,7 @@ const drawingItemSchema = new mongoose.Schema({
     }
 }, { _id: false });
 
-const drawingSchema = new mongoose.Schema({
+const chartDrawingSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -68,8 +68,8 @@ const drawingSchema = new mongoose.Schema({
 });
 
 // Compound unique index on userId + symbol + interval
-drawingSchema.index({ userId: 1, symbol: 1, interval: 1 }, { unique: true });
+chartDrawingSchema.index({ userId: 1, symbol: 1, interval: 1 }, { unique: true });
 
-const Drawing = mongoose.model('Drawing', drawingSchema);
+const ChartDrawing = mongoose.model('ChartDrawing', chartDrawingSchema);
 
-export default Drawing;
+export default ChartDrawing;

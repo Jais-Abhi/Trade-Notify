@@ -1,5 +1,5 @@
 import express from 'express';
-import { saveDrawings, loadDrawings, deleteDrawings } from '../controllers/drawing.controller.js';
+import { saveDrawings, loadDrawings, deleteDrawings } from '../controllers/chartDrawing.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();
@@ -7,10 +7,10 @@ const router = express.Router();
 // All drawing routes require authentication
 router.use(protect);
 
-// POST /api/drawings/save
+// POST /api/chart-drawings/save
 router.post('/save', saveDrawings);
 
-// GET /api/drawings & DELETE /api/drawings
+// GET /api/chart-drawings & DELETE /api/chart-drawings
 router.route('/')
     .get(loadDrawings)
     .delete(deleteDrawings);

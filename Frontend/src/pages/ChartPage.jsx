@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import ChartContainer from '../components/ChartContainer';
 import api from '../api/axios';
-import { ArrowLeft, Share2, Settings, Maximize2, ChevronDown, Loader2, Clock, Star } from 'lucide-react';
+import { ArrowLeft, Share2, Settings, Maximize2, ChevronDown, Loader2, Clock, Star, Save, CheckCircle2, XCircle } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addToWishlist, removeFromWishlist } from '../features/wishlist/wishlistSlice';
 
@@ -16,8 +16,85 @@ const ChartPage = () => {
     const [loadingIntervals, setLoadingIntervals] = useState(true);
     const [isIntervalOpen, setIsIntervalOpen] = useState(false);
     const [stockInfo, setStockInfo] = useState(null);
+    
+    const [drawingLines, setDrawingLines] = useState([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [toast, setToast] = useState(null);
 
     const isInWishlist = wishlist.some(item => item.symbol === symbol);
+
+    const showToast = (message, type = 'success') => {
+        setToast({ message, type });
+        setTimeout(() => {
+            setToast(null);
+        }, 3000);
+    };
+
+    // Fetch drawings on symbol/interval change
+    useEffect(() => {
+        if (!symbol) return;
+        setDrawingLines([]);
+
+        const fetchDrawings = async () => {
+            try {
+                const response = await api.get(`/chart-drawings?symbol=${symbol}&interval=${selectedInterval}`);
+                if (response.data && response.data.success) {
+                    const loaded = response.data.data.map(d => {
+                        if (d.tool === 'trendline' && d.points && d.points.length >= 2) {
+                            return {
+                                id: d.id,
+                                start: d.points[0],
+                                end: d.points[1]
+                            };
+                        }
+                        return null;
+                    }).filter(Boolean);
+                    setDrawingLines(loaded);
+                }
+            } catch (err) {
+                console.error('Failed to load drawings', err);
+            }
+        };
+
+        fetchDrawings();
+    }, [symbol, selectedInterval]);
+
+    const handleSaveDrawings = async () => {
+        setIsSaving(true);
+        try {
+            if (drawingLines.length === 0) {
+                await api.delete(`/chart-drawings?symbol=${symbol}&interval=${selectedInterval}`);
+            } else {
+                const payload = {
+                    symbol,
+                    interval: selectedInterval,
+                    drawings: drawingLines.map(line => ({
+                        id: line.id.toString(),
+                        tool: 'trendline',
+                        points: [
+                            { time: line.start.time, price: line.start.price },
+                            { time: line.end.time, price: line.end.price }
+                        ],
+                        style: {
+                            color: '#3b82f6',
+                            width: 2,
+                            lineStyle: 'solid'
+                        },
+                        options: {},
+                        locked: false,
+                        visible: true
+                    }))
+                };
+                await api.post('/chart-drawings/save', payload);
+            }
+            showToast('Drawings saved successfully', 'success');
+        } catch (err) {
+            console.error('Error saving drawings:', err);
+            showToast('Failed to save drawings', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     useEffect(() => {
         const fetchStockInfo = async () => {
@@ -139,6 +216,19 @@ const ChartPage = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                    <button 
+                        onClick={handleSaveDrawings}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-3 h-8 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded transition-colors shadow-lg shadow-emerald-600/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                            <Save className="w-3.5 h-3.5" />
+                        )}
+                        SAVE DRAWINGS
+                    </button>
+                    <div className="h-6 w-[1px] bg-slate-900 mx-1"></div>
                     <button className="flex items-center gap-2 px-3 h-8 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded transition-colors shadow-lg shadow-blue-600/10">
                         <Share2 className="w-3.5 h-3.5" />
                         PUBLISH
@@ -155,8 +245,29 @@ const ChartPage = () => {
 
             {/* Chart Area */}
             <main className="flex-1 w-full bg-slate-950 overflow-hidden relative">
-                <ChartContainer symbol={symbol} interval={selectedInterval} />
+                <ChartContainer 
+                    symbol={symbol} 
+                    interval={selectedInterval} 
+                    drawingLines={drawingLines}
+                    setDrawingLines={setDrawingLines}
+                />
             </main>
+
+            {/* Custom Premium Toast Notification */}
+            {toast && (
+                <div className={`fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-2xl transition-all duration-300 transform translate-y-0 animate-in fade-in slide-in-from-bottom-4 ${
+                    toast.type === 'success' 
+                        ? 'bg-emerald-950/90 border-emerald-800 text-emerald-200' 
+                        : 'bg-red-950/90 border-red-800 text-red-200'
+                }`}>
+                    {toast.type === 'success' ? (
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    ) : (
+                        <XCircle className="w-5 h-5 text-red-500" />
+                    )}
+                    <span className="text-xs font-semibold">{toast.message}</span>
+                </div>
+            )}
         </div>
     );
 };

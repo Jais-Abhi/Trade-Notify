@@ -1,8 +1,8 @@
-import Drawing from '../models/Drawing.js';
+import ChartDrawing from '../models/ChartDrawing.js';
 
 /**
  * @desc    Save/Update drawings for a specific chart (user, symbol, interval)
- * @route   POST /api/drawings/save
+ * @route   POST /api/chart-drawings/save
  * @access  Private
  */
 export const saveDrawings = async (req, res) => {
@@ -43,7 +43,7 @@ export const saveDrawings = async (req, res) => {
         }
 
         // Find and update or create new document
-        const drawingDoc = await Drawing.findOneAndUpdate(
+        const drawingDoc = await ChartDrawing.findOneAndUpdate(
             { userId, symbol, interval },
             { drawings },
             { new: true, upsert: true, runValidators: true }
@@ -67,7 +67,7 @@ export const saveDrawings = async (req, res) => {
 
 /**
  * @desc    Load drawings for a specific chart
- * @route   GET /api/drawings
+ * @route   GET /api/chart-drawings
  * @access  Private
  */
 export const loadDrawings = async (req, res) => {
@@ -90,7 +90,7 @@ export const loadDrawings = async (req, res) => {
             });
         }
 
-        const drawingDoc = await Drawing.findOne({ userId, symbol, interval });
+        const drawingDoc = await ChartDrawing.findOne({ userId, symbol, interval });
 
         return res.status(200).json({
             success: true,
@@ -109,7 +109,7 @@ export const loadDrawings = async (req, res) => {
 
 /**
  * @desc    Delete drawings for a specific chart
- * @route   DELETE /api/drawings
+ * @route   DELETE /api/chart-drawings
  * @access  Private
  */
 export const deleteDrawings = async (req, res) => {
@@ -132,7 +132,7 @@ export const deleteDrawings = async (req, res) => {
             });
         }
 
-        const result = await Drawing.findOneAndDelete({ userId, symbol, interval });
+        const result = await ChartDrawing.findOneAndDelete({ userId, symbol, interval });
 
         if (!result) {
             return res.status(404).json({

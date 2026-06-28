@@ -7,7 +7,7 @@ import connectDB from './src/config/db.js';
 import marketRoutes from './src/routes/market.routes.js';
 import stockRoutes from './src/routes/stock.routes.js';
 import wishlistRoutes from './src/routes/wishlist.routes.js';
-import drawingRoutes from './src/routes/drawing.routes.js';
+import chartDrawingRoutes from './src/routes/chartDrawing.routes.js';
 import cookieParser from 'cookie-parser';
 
 // Load environment variables
@@ -46,7 +46,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/market', marketRoutes);
 app.use('/api/stocks', stockRoutes);
 app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/drawings', drawingRoutes);
+app.use('/api/chart-drawings', chartDrawingRoutes);
 
 const PORT = process.env.PORT || 5000;
 
