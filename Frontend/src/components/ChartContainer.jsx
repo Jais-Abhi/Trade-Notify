@@ -13,12 +13,15 @@ const ChartContainer = ({
     updateDrawingLinesWithHistory,
     selectedDrawingId,
     setSelectedDrawingId,
-    onDragStart
+    onDragStart,
+    activeTool,
+    setActiveTool,
+    tools,
+    selectedTool
 }) => {
     const chartContainerRef = useRef();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeTool, setActiveTool] = useState(null); // 'trendline' or null
     const [chartInstance, setChartInstance] = useState(null);
     const [seriesInstance, setSeriesInstance] = useState(null);
 
@@ -103,6 +106,17 @@ const ChartContainer = ({
 
                     console.log(`Setting ${cleanData.length} candles to chart`);
                     candlestickSeries.setData(cleanData);
+                    const drawingTime = 1781861400;
+
+console.log(
+    "Drawing timestamp:",
+    drawingTime
+);
+
+console.log(
+    "Exists in current candles:",
+    cleanData.some(c => c.time === drawingTime)
+);
                     chart.timeScale().fitContent();
                 } else {
                     throw new Error(data.message || 'Malformed API response structure');
@@ -167,6 +181,7 @@ const ChartContainer = ({
             {/* Drawing Layer Overlay */}
             <DrawingLayer 
                 activeTool={activeTool} 
+                activeToolConfig={selectedTool}
                 lines={drawingLines}
                 setLines={setDrawingLines}
                 updateDrawingLinesWithHistory={updateDrawingLinesWithHistory}
@@ -181,6 +196,7 @@ const ChartContainer = ({
             <DrawingToolbar 
                 activeTool={activeTool} 
                 setActiveTool={setActiveTool} 
+                tools={tools}
                 onClearAll={() => updateDrawingLinesWithHistory([])}
             />
             

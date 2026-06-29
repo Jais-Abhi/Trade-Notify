@@ -58,17 +58,13 @@ const chartDrawingSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    interval: {
-        type: String,
-        required: true,
-    },
     drawings: [drawingItemSchema]
 }, {
     timestamps: true
 });
 
-// Compound unique index on userId + symbol + interval
-chartDrawingSchema.index({ userId: 1, symbol: 1, interval: 1 }, { unique: true });
+// Compound unique index on userId + symbol
+chartDrawingSchema.index({ userId: 1, symbol: 1 }, { unique: true });
 
 const ChartDrawing = mongoose.model('ChartDrawing', chartDrawingSchema);
 

@@ -1,13 +1,14 @@
 import ChartDrawing from '../models/ChartDrawing.js';
 
 /**
- * @desc    Save/Update drawings for a specific chart (user, symbol, interval)
+ * @desc    Save/Update drawings for a specific chart (user + symbol, shared across all intervals)
  * @route   POST /api/chart-drawings/save
  * @access  Private
  */
 export const saveDrawings = async (req, res) => {
     try {
-        const { symbol, interval, drawings } = req.body;
+        const { symbol, drawings } = req.body;
+        console.log(symbol,drawings);
         const userId = req.user._id;
 
         // Validation
@@ -15,13 +16,6 @@ export const saveDrawings = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: 'Symbol is required'
-            });
-        }
-
-        if (!interval) {
-            return res.status(400).json({
-                success: false,
-                message: 'Interval is required'
             });
         }
 
@@ -42,9 +36,9 @@ export const saveDrawings = async (req, res) => {
             }
         }
 
-        // Find and update or create new document
+        // Find and update or create new document (keyed by userId + symbol only)
         const drawingDoc = await ChartDrawing.findOneAndUpdate(
-            { userId, symbol, interval },
+            { userId, symbol },
             { drawings },
             { new: true, upsert: true, runValidators: true }
         );
@@ -66,13 +60,13 @@ export const saveDrawings = async (req, res) => {
 };
 
 /**
- * @desc    Load drawings for a specific chart
+ * @desc    Load drawings for a specific chart (user + symbol, shared across all intervals)
  * @route   GET /api/chart-drawings
  * @access  Private
  */
 export const loadDrawings = async (req, res) => {
     try {
-        const { symbol, interval } = req.query;
+        const { symbol } = req.query;
         const userId = req.user._id;
 
         // Validation
@@ -83,14 +77,7 @@ export const loadDrawings = async (req, res) => {
             });
         }
 
-        if (!interval) {
-            return res.status(400).json({
-                success: false,
-                message: 'Interval query parameter is required'
-            });
-        }
-
-        const drawingDoc = await ChartDrawing.findOne({ userId, symbol, interval });
+        const drawingDoc = await ChartDrawing.findOne({ userId, symbol });
 
         return res.status(200).json({
             success: true,
@@ -108,13 +95,13 @@ export const loadDrawings = async (req, res) => {
 };
 
 /**
- * @desc    Delete drawings for a specific chart
+ * @desc    Delete all drawings for a specific chart (user + symbol)
  * @route   DELETE /api/chart-drawings
  * @access  Private
  */
 export const deleteDrawings = async (req, res) => {
     try {
-        const { symbol, interval } = req.query;
+        const { symbol } = req.query;
         const userId = req.user._id;
 
         // Validation
@@ -125,14 +112,7 @@ export const deleteDrawings = async (req, res) => {
             });
         }
 
-        if (!interval) {
-            return res.status(400).json({
-                success: false,
-                message: 'Interval query parameter is required'
-            });
-        }
-
-        const result = await ChartDrawing.findOneAndDelete({ userId, symbol, interval });
+        const result = await ChartDrawing.findOneAndDelete({ userId, symbol });
 
         if (!result) {
             return res.status(404).json({

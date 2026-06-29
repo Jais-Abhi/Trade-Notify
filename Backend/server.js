@@ -9,6 +9,8 @@ import stockRoutes from './src/routes/stock.routes.js';
 import wishlistRoutes from './src/routes/wishlist.routes.js';
 import chartDrawingRoutes from './src/routes/chartDrawing.routes.js';
 import cookieParser from 'cookie-parser';
+import toolDefinitionRoutes from './src/routes/toolDefinition.routes.js';
+import toolPreferenceRoutes from './src/routes/toolPreference.routes.js';
 
 // Load environment variables
 
@@ -47,6 +49,8 @@ app.use('/api/market', marketRoutes);
 app.use('/api/stocks', stockRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/chart-drawings', chartDrawingRoutes);
+app.use('/api/tools', toolPreferenceRoutes);
+app.use('/admin/tool-definitions', toolDefinitionRoutes);
 
 const PORT = process.env.PORT || 5000;
 

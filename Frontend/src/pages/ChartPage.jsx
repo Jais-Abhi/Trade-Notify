@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import ChartContainer from '../components/ChartContainer';
 import api from '../api/axios';
 import { ArrowLeft, Share2, Settings, Maximize2, ChevronDown, Loader2, Clock, Star, Save, CheckCircle2, XCircle, Undo2, Redo2 } from 'lucide-react';
-import { useDispatch, useSelector } from 'react-redux';
 import { addToWishlist, removeFromWishlist } from '../features/wishlist/wishlistSlice';
+import { setActiveTool } from '../features/drawingTool/drawingToolSlice';
 
 const ChartPage = () => {
     const { symbol } = useParams();
     const dispatch = useDispatch();
     const { items: wishlist } = useSelector((state) => state.wishlist);
+    const { tools, activeTool } = useSelector((state) => state.drawingTool);
     
     const [intervals, setIntervals] = useState(['1m', '5m', '15m', '1h', '1d']);
     const [selectedInterval, setSelectedInterval] = useState('5m');
@@ -82,14 +84,17 @@ const ChartPage = () => {
 
         const fetchDrawings = async () => {
             try {
-                const response = await api.get(`/chart-drawings?symbol=${symbol}&interval=${selectedInterval}`);
+                const response = await api.get(`/chart-drawings?symbol=${symbol}`);
                 if (response.data && response.data.success) {
                     const loaded = response.data.data.map(d => {
                         if (d.tool === 'trendline' && d.points && d.points.length >= 2) {
                             return {
                                 id: d.id,
+                                tool: d.tool,
                                 start: d.points[0],
-                                end: d.points[1]
+                                end: d.points[1],
+                                style: d.style || {},
+                                options: d.options || {}
                             };
                         }
                         return null;
@@ -102,30 +107,30 @@ const ChartPage = () => {
         };
 
         fetchDrawings();
-    }, [symbol, selectedInterval]);
+    }, [symbol]); // Only re-fetch when symbol changes — interval switches reuse the same drawings in React state
 
     const handleSaveDrawings = async () => {
         setIsSaving(true);
         try {
             if (drawingLines.length === 0) {
-                await api.delete(`/chart-drawings?symbol=${symbol}&interval=${selectedInterval}`);
+                await api.delete(`/chart-drawings?symbol=${symbol}`);
             } else {
+                const defaultTool = tools.find((tool) => tool.tool === 'trendline');
                 const payload = {
                     symbol,
-                    interval: selectedInterval,
                     drawings: drawingLines.map(line => ({
                         id: line.id.toString(),
-                        tool: 'trendline',
+                        tool: line.tool || 'trendline',
                         points: [
                             { time: line.start.time, price: line.start.price },
                             { time: line.end.time, price: line.end.price }
                         ],
                         style: {
-                            color: '#3b82f6',
-                            width: 2,
-                            lineStyle: 'solid'
+                            color: line.style?.color || defaultTool?.style?.color || '#3b82f6',
+                            width: line.style?.width || defaultTool?.style?.width || 2,
+                            lineStyle: line.style?.lineStyle || defaultTool?.style?.lineStyle || 'solid'
                         },
-                        options: {},
+                        options: line.options || defaultTool?.options || {},
                         locked: false,
                         visible: true
                     }))
@@ -316,6 +321,10 @@ const ChartPage = () => {
                     selectedDrawingId={selectedDrawingId}
                     setSelectedDrawingId={setSelectedDrawingId}
                     onDragStart={handleDragStart}
+                    activeTool={activeTool}
+                    setActiveTool={(tool) => dispatch(setActiveTool(tool))}
+                    tools={tools}
+                    selectedTool={tools.find((tool) => tool.tool === activeTool) || null}
                 />
             </main>
 

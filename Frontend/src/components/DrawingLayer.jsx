@@ -10,6 +10,7 @@ import React, { useState, useRef, useEffect } from 'react';
  */
 const DrawingLayer = ({ 
     activeTool, 
+    activeToolConfig,
     lines, 
     setLines, 
     updateDrawingLinesWithHistory,
@@ -224,7 +225,16 @@ const DrawingLayer = ({
                 const newLine = {
                     start: startPoint,
                     end: { time: pos.time, price: pos.price },
-                    id: Date.now()
+                    id: Date.now(),
+                    tool: activeTool || 'trendline',
+                    style: {
+                        color: activeToolConfig?.style?.color,
+                        width: activeToolConfig?.style?.width || 2,
+                        lineStyle: activeToolConfig?.style?.lineStyle || 'solid'
+                    },
+                    options: {
+                        ...activeToolConfig?.options
+                    }
                 };
                 updateDrawingLinesWithHistory(prev => [...prev, newLine]);
                 setIsDrawing(false);
@@ -355,6 +365,12 @@ const DrawingLayer = ({
             <g ref={linesGroupRef}>
                 {lines.map((line) => {
                     const isSelected = line.id === selectedDrawingId;
+                    const lineColor = line.style?.color ;
+                    const lineWidth = line.style?.width || 2;
+                    const selectedWidth = isSelected ? Math.max(lineWidth + 1, 2.5) : lineWidth;
+                    const lineStyle = line.style?.lineStyle || 'solid';
+                    const lineDash = lineStyle === 'dashed' ? '6, 4' : '4, 4';
+
                     return (
                         <g key={line.id} data-line-id={line.id} display="none">
                             {/* Hit Area — invisible thick line for easy pointer interaction */}
@@ -366,10 +382,11 @@ const DrawingLayer = ({
                             />
                             {/* Visual Line */}
                             <line
-                                stroke={isSelected ? '#60a5fa' : '#3b82f6'}
-                                strokeWidth={isSelected ? '2.5' : '2'}
+                                stroke={lineColor}
+                                strokeWidth={selectedWidth}
                                 strokeLinecap="round"
                                 filter="url(#glow)"
+                                strokeDasharray={lineStyle === 'solid' ? '0' : lineDash}
                                 style={{ pointerEvents: 'none', opacity: isSelected ? 1 : 0.75 }}
                             />
                             {/* Endpoint Handle P1 — always in DOM; visibility controlled by RAF via display attr */}
@@ -379,7 +396,7 @@ const DrawingLayer = ({
                                 data-handle="1"
                                 r="5"
                                 fill="#ffffff"
-                                stroke="#3b82f6"
+                                stroke={lineColor}
                                 strokeWidth="2.5"
                                 display={isSelected ? 'block' : 'none'}
                                 style={{ pointerEvents: isSelected ? 'all' : 'none', cursor: 'move' }}
@@ -391,7 +408,7 @@ const DrawingLayer = ({
                                 data-handle="2"
                                 r="5"
                                 fill="#ffffff"
-                                stroke="#3b82f6"
+                                stroke={lineColor}
                                 strokeWidth="2.5"
                                 display={isSelected ? 'block' : 'none'}
                                 style={{ pointerEvents: isSelected ? 'all' : 'none', cursor: 'move' }}
@@ -404,9 +421,9 @@ const DrawingLayer = ({
             {/* Preview Line (Only shown during active drawing) */}
             <line
                 ref={previewLineRef}
-                stroke="#3b82f6"
-                strokeWidth="1.5"
-                strokeDasharray="4, 4"
+                stroke={activeToolConfig?.style?.color}
+                strokeWidth={activeToolConfig?.style?.width || 1.5}
+                strokeDasharray={activeToolConfig?.style?.lineStyle === 'dashed' ? '6, 4' : '4, 4'}
                 opacity="0.6"
                 display="none"
             />
