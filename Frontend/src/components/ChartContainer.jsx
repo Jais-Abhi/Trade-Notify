@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { Loader2, AlertCircle } from 'lucide-react';
 import DrawingLayer from './DrawingLayer';
 import DrawingToolbar from './DrawingToolbar';
+import FloatingDrawingToolbar from './FloatingDrawingToolbar';
 
 const ChartContainer = ({ 
     symbol, 
@@ -17,7 +18,11 @@ const ChartContainer = ({
     activeTool,
     setActiveTool,
     tools,
-    selectedTool
+    selectedTool,
+    onStyleChange,
+    onSaveSelectedDrawing,
+    onDeleteSelectedDrawing,
+    isSaving
 }) => {
     const chartContainerRef = useRef();
     const [loading, setLoading] = useState(true);
@@ -190,6 +195,18 @@ console.log(
                 onDragStart={onDragStart}
                 chart={chartInstance}
                 series={seriesInstance}
+            />
+
+            <FloatingDrawingToolbar
+                selectedDrawing={drawingLines.find((line) => line.id === selectedDrawingId)}
+                chart={chartInstance}
+                series={seriesInstance}
+                chartContainerRef={chartContainerRef}
+                onStyleChange={onStyleChange}
+                onSave={onSaveSelectedDrawing}
+                onDelete={onDeleteSelectedDrawing}
+                onClose={() => setSelectedDrawingId(null)}
+                isSaving={isSaving}
             />
 
             {/* Drawing Tools Sidebar */}

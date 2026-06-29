@@ -79,8 +79,12 @@ const FloatingDrawingToolbar = ({
             if (toolbarRef.current.contains(event.target)) return;
 
             const chartRoot = chartContainerRef?.current;
-            if (!chartRoot) return;
-            if (chartRoot.contains(event.target)) return;
+            const isClickInsideChart = chartRoot?.contains(event.target);
+            const isClickOnDrawing = event.target.closest('[data-line-body-id], [data-handle]');
+
+            if (isClickInsideChart && isClickOnDrawing) {
+                return;
+            }
 
             onClose?.();
         };

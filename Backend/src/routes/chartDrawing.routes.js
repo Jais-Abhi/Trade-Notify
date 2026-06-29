@@ -1,5 +1,5 @@
 import express from 'express';
-import { saveDrawings, loadDrawings, deleteDrawings } from '../controllers/chartDrawing.controller.js';
+import { saveDrawings, loadDrawings, deleteDrawings, deleteDrawingById } from '../controllers/chartDrawing.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 
 const router = express.Router();

@@ -5,7 +5,7 @@ import ChartContainer from '../components/ChartContainer';
 import api from '../api/axios';
 import { ArrowLeft, Share2, Settings, Maximize2, ChevronDown, Loader2, Clock, Star, Save, CheckCircle2, XCircle, Undo2, Redo2 } from 'lucide-react';
 import { addToWishlist, removeFromWishlist } from '../features/wishlist/wishlistSlice';
-import { setActiveTool } from '../features/drawingTool/drawingToolSlice';
+import { setActiveTool, updateToolPreference } from '../features/drawingTool/drawingToolSlice';
 
 const ChartPage = () => {
     const { symbol } = useParams();
@@ -143,6 +143,86 @@ const ChartPage = () => {
             showToast('Failed to save drawings', 'error');
         } finally {
             setIsSaving(false);
+        }
+    };
+
+    const handleStyleChange = (newStyle) => {
+        if (!selectedDrawingId) return;
+        setDrawingLines(prev => prev.map((line) => {
+            if (line.id === selectedDrawingId) {
+                return {
+                    ...line,
+                    style: {
+                        ...line.style,
+                        ...newStyle
+                    }
+                };
+            }
+            return line;
+        }));
+    };
+
+    const handleSaveSelectedDrawing = async () => {
+        if (!selectedDrawingId) return;
+        const selectedDrawing = drawingLines.find((line) => line.id === selectedDrawingId);
+        if (!selectedDrawing) return;
+
+        setIsSaving(true);
+        try {
+            const toolId = selectedDrawing.tool || 'trendline';
+            await dispatch(updateToolPreference({
+                toolId,
+                payload: {
+                    style: {
+                        color: selectedDrawing.style?.color
+                    }
+                }
+            })).unwrap();
+
+            const defaultTool = tools.find((tool) => tool.tool === toolId);
+            const payload = {
+                symbol,
+                drawings: drawingLines.map(line => ({
+                    id: line.id.toString(),
+                    tool: line.tool || 'trendline',
+                    points: [
+                        { time: line.start.time, price: line.start.price },
+                        { time: line.end.time, price: line.end.price }
+                    ],
+                    style: {
+                        color: line.style?.color || defaultTool?.style?.color || '#3b82f6',
+                        width: line.style?.width || defaultTool?.style?.width || 2,
+                        lineStyle: line.style?.lineStyle || defaultTool?.style?.lineStyle || 'solid'
+                    },
+                    options: line.options || defaultTool?.options || {},
+                    locked: false,
+                    visible: true
+                }))
+            };
+
+            await api.post('/chart-drawings/save', payload);
+            showToast('Selected drawing and preference saved', 'success');
+        } catch (err) {
+            console.error('Failed to save selected drawing or tool preference:', err);
+            showToast('Failed to save toolbar changes', 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleDeleteSelectedDrawing = async () => {
+        if (!selectedDrawingId) return;
+
+        const nextDrawingLines = drawingLines.filter((line) => line.id !== selectedDrawingId);
+        updateDrawingLinesWithHistory(nextDrawingLines);
+        setSelectedDrawingId(null);
+
+        try {
+            await api.delete(`/chart-drawings/${selectedDrawingId}?symbol=${symbol}`);
+            showToast('Drawing deleted', 'success');
+        } catch (err) {
+            console.error('Failed to delete selected drawing:', err);
+            showToast('Failed to delete drawing', 'error');
         }
     };
 
@@ -325,6 +405,10 @@ const ChartPage = () => {
                     setActiveTool={(tool) => dispatch(setActiveTool(tool))}
                     tools={tools}
                     selectedTool={tools.find((tool) => tool.tool === activeTool) || null}
+                    onStyleChange={handleStyleChange}
+                    onSaveSelectedDrawing={handleSaveSelectedDrawing}
+                    onDeleteSelectedDrawing={handleDeleteSelectedDrawing}
+                    isSaving={isSaving}
                 />
             </main>
 
