@@ -135,3 +135,57 @@ export const deleteDrawings = async (req, res) => {
         });
     }
 };
+/**
+ * @desc    Delete a single drawing from a chart by its drawing id
+ * @route   DELETE /api/chart-drawings/:drawingId
+ * @access  Private
+ */
+ export const deleteDrawingById = async (req, res) => {
+     try {
+         const { drawingId } = req.params;
+         const { symbol } = req.query;
+         const userId = req.user._id;
+
+         if (!symbol) {
+             return res.status(400).json({
+                 success: false,
+                 message: 'Symbol query parameter is required'
+             });
+         }
+
+         const chartDoc = await ChartDrawing.findOne({ userId, symbol });
+         if (!chartDoc) {
+             return res.status(404).json({
+                 success: false,
+                 message: 'No drawings found for the specified chart'
+             });
+         }
+
+         const existingDrawing = chartDoc.drawings.find((drawing) => drawing.id === drawingId);
+         if (!existingDrawing) {
+             return res.status(404).json({
+                 success: false,
+                 message: 'Drawing not found'
+             });
+         }
+
+         const updatedChart = await ChartDrawing.findOneAndUpdate(
+             { userId, symbol },
+             { $pull: { drawings: { id: drawingId } } },
+             { new: true }
+         );
+
+         return res.status(200).json({
+             success: true,
+             message: 'Drawing deleted successfully',
+             data: updatedChart?.drawings || []
+         });
+     } catch (error) {
+         console.error('Delete Drawing By Id Error:', error);
+         return res.status(500).json({
+             success: false,
+             message: 'Server Error',
+             error: error.message
+         });
+     }
+};

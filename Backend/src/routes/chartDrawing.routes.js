@@ -10,6 +10,9 @@ router.use(protect);
 // POST /api/chart-drawings/save
 router.post('/save', saveDrawings);
 
+// DELETE /api/chart-drawings/:drawingId
+router.delete('/:drawingId', deleteDrawingById);
+
 // GET /api/chart-drawings & DELETE /api/chart-drawings
 router.route('/')
     .get(loadDrawings)
