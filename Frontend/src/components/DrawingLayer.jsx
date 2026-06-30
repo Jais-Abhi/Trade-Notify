@@ -68,8 +68,9 @@ const DrawingLayer = ({
 
             // 1. Update Preview Line if drawing
             if (isDrawing && startPoint && previewLineRef.current) {
+                const resolvedStartTime = resolveRenderableTime(startPoint.time, candles);
                 const p1 = {
-                    x: chart.timeScale().timeToCoordinate(startPoint.time),
+                    x: resolvedStartTime == null ? null : chart.timeScale().timeToCoordinate(resolvedStartTime),
                     y: series.priceToCoordinate(startPoint.price)
                 };
                 
@@ -97,11 +98,11 @@ const DrawingLayer = ({
                     const resolvedStartTime = resolveRenderableTime(lineData.start.time, candles);
                     const resolvedEndTime = resolveRenderableTime(lineData.end.time, candles);
                     const p1 = {
-                        x: chart.timeScale().timeToCoordinate(resolvedStartTime),
+                        x: resolvedStartTime == null ? null : chart.timeScale().timeToCoordinate(resolvedStartTime),
                         y: series.priceToCoordinate(lineData.start.price)
                     };
                     const p2 = {
-                        x: chart.timeScale().timeToCoordinate(resolvedEndTime),
+                        x: resolvedEndTime == null ? null : chart.timeScale().timeToCoordinate(resolvedEndTime),
                         y: series.priceToCoordinate(lineData.end.price)
                     };
 
