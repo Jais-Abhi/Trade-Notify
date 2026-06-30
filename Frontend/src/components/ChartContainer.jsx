@@ -29,6 +29,7 @@ const ChartContainer = ({
     const [error, setError] = useState(null);
     const [chartInstance, setChartInstance] = useState(null);
     const [seriesInstance, setSeriesInstance] = useState(null);
+    const [candles, setCandles] = useState([]);
 
     useEffect(() => {
         if (!symbol) return;
@@ -104,6 +105,8 @@ const ChartContainer = ({
                     const cleanData = data.data.candles
                         .filter(candle => candle && typeof candle.time === 'number')
                         .sort((a, b) => a.time - b.time);
+
+                    setCandles(cleanData);
 
                     if (cleanData.length === 0) {
                         throw new Error('No valid data points found for this timeframe');
@@ -195,6 +198,7 @@ console.log(
                 onDragStart={onDragStart}
                 chart={chartInstance}
                 series={seriesInstance}
+                candles={candles}
             />
 
             <FloatingDrawingToolbar

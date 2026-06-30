@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import resolveRenderableTime from '../utils/resolveRenderableTime';
 
 /**
  * DrawingLayer handles the SVG overlay for manual chart drawings.
@@ -18,7 +19,8 @@ const DrawingLayer = ({
     setSelectedDrawingId, 
     onDragStart,
     chart, 
-    series 
+    series,
+    candles = []
 }) => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState(null); // { time, price }
@@ -91,12 +93,14 @@ const DrawingLayer = ({
                     const lineData = lines.find(l => l.id.toString() === id);
                     if (!lineData) return;
 
+                    const resolvedStartTime = resolveRenderableTime(lineData.start.time, candles);
+                    const resolvedEndTime = resolveRenderableTime(lineData.end.time, candles);
                     const p1 = {
-                        x: chart.timeScale().timeToCoordinate(lineData.start.time),
+                        x: chart.timeScale().timeToCoordinate(resolvedStartTime),
                         y: series.priceToCoordinate(lineData.start.price)
                     };
                     const p2 = {
-                        x: chart.timeScale().timeToCoordinate(lineData.end.time),
+                        x: chart.timeScale().timeToCoordinate(resolvedEndTime),
                         y: series.priceToCoordinate(lineData.end.price)
                     };
 
@@ -192,11 +196,11 @@ const DrawingLayer = ({
                         originalStart: { ...line.start },
                         originalEnd: { ...line.end },
                         originalStartPix: {
-                            x: chart.timeScale().timeToCoordinate(line.start.time),
+                            x: chart.timeScale().timeToCoordinate(resolveRenderableTime(line.start.time, candles)),
                             y: series.priceToCoordinate(line.start.price)
                         },
                         originalEndPix: {
-                            x: chart.timeScale().timeToCoordinate(line.end.time),
+                            x: chart.timeScale().timeToCoordinate(resolveRenderableTime(line.end.time, candles)),
                             y: series.priceToCoordinate(line.end.price)
                         },
                         snapshotLines: [...lines], // Pre-drag snapshot for history
@@ -347,7 +351,7 @@ const DrawingLayer = ({
             parent.removeEventListener('contextmenu', onContextMenu);
             window.removeEventListener('keydown', onKeyDown);
         };
-    }, [chart, series, lines, isDrawing, startPoint, activeTool, selectedDrawingId]);
+    }, [chart, series, candles, lines, isDrawing, startPoint, activeTool, selectedDrawingId]);
 
     return (
         <svg
