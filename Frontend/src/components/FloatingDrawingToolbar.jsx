@@ -12,11 +12,12 @@ const FloatingDrawingToolbar = ({
     onClose
 }) => {
     const toolbarRef = useRef(null);
-    const [color, setColor] = useState(selectedDrawing?.style?.color || '#3b82f6');
+    const selectedDrawingColor = selectedDrawing?.style?.color || '#3b82f6';
+    const [color, setColor] = useState(selectedDrawingColor);
 
     useEffect(() => {
-        setColor(selectedDrawing?.style?.color || '#3b82f6');
-    }, [selectedDrawing]);
+        setColor((prevColor) => (prevColor === selectedDrawingColor ? prevColor : selectedDrawingColor));
+    }, [selectedDrawingColor]);
 
     useEffect(() => {
         if (!selectedDrawing || !chart || !series || !chartContainerRef?.current || !toolbarRef.current) {
@@ -71,7 +72,7 @@ const FloatingDrawingToolbar = ({
 
         rafId = requestAnimationFrame(updatePosition);
         return () => cancelAnimationFrame(rafId);
-    }, [selectedDrawing, chart, series, chartContainerRef]);
+    }, [selectedDrawing?.id, selectedDrawing?.start?.time, selectedDrawing?.start?.price, selectedDrawing?.end?.time, selectedDrawing?.end?.price, chart, series, chartContainerRef]);
 
     useEffect(() => {
         const handleDocumentClick = (event) => {
@@ -91,9 +92,25 @@ const FloatingDrawingToolbar = ({
 
         document.addEventListener('mousedown', handleDocumentClick);
         return () => document.removeEventListener('mousedown', handleDocumentClick);
-    }, [selectedDrawing, chartContainerRef, onClose]);
+    }, [selectedDrawing?.id, chartContainerRef, onClose]);
 
     if (!selectedDrawing) return null;
+
+    const handleColorChange = (event) => {
+        setColor(event.target.value);
+    };
+
+    const handleSave = () => {
+        const nextStyle = { color };
+
+        if (color !== selectedDrawingColor) {
+            onStyleChange?.(nextStyle);
+        }
+
+        window.requestAnimationFrame(() => {
+            onSave?.(nextStyle);
+        });
+    };
 
     return (
         <div
@@ -108,11 +125,7 @@ const FloatingDrawingToolbar = ({
                     id="toolbar-color-picker"
                     type="color"
                     value={color}
-                    onChange={(e) => {
-                        const next = e.target.value;
-                        setColor(next);
-                        onStyleChange({ color: next });
-                    }}
+                    onChange={handleColorChange}
                     className="w-10 h-10 p-0 border-0 rounded-lg cursor-pointer"
                 />
             </div>
@@ -120,7 +133,7 @@ const FloatingDrawingToolbar = ({
             <div className="h-8 w-px bg-slate-700" />
 
             <button
-                onClick={onSave}
+                onClick={handleSave}
                 disabled={isSaving}
                 className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >

@@ -162,11 +162,30 @@ const ChartPage = () => {
         }));
     };
 
-    const handleSaveSelectedDrawing = async () => {
+    const handleSaveSelectedDrawing = async (styleOverride = {}) => {
         if (!selectedDrawingId) return;
         const selectedDrawing = drawingLines.find((line) => line.id === selectedDrawingId);
         if (!selectedDrawing) return;
 
+        const nextStyle = {
+            ...(selectedDrawing.style || {}),
+            ...styleOverride
+        };
+
+        const updatedDrawingLines = drawingLines.map((line) => {
+            if (line.id === selectedDrawingId) {
+                return {
+                    ...line,
+                    style: {
+                        ...(line.style || {}),
+                        ...styleOverride
+                    }
+                };
+            }
+            return line;
+        });
+
+        setDrawingLines(updatedDrawingLines);
         setIsSaving(true);
         try {
             const toolId = selectedDrawing.tool || 'trendline';
@@ -174,7 +193,7 @@ const ChartPage = () => {
                 toolId,
                 payload: {
                     style: {
-                        color: selectedDrawing.style?.color
+                        color: nextStyle.color
                     }
                 }
             })).unwrap();
@@ -182,7 +201,7 @@ const ChartPage = () => {
             const defaultTool = tools.find((tool) => tool.tool === toolId);
             const payload = {
                 symbol,
-                drawings: drawingLines.map(line => ({
+                drawings: updatedDrawingLines.map(line => ({
                     id: line.id.toString(),
                     tool: line.tool || 'trendline',
                     points: [
