@@ -97,8 +97,6 @@ const ChartContainer = ({
                 const response = await api.get(`/market/candles?symbol=${symbol}&interval=${interval}`);
                 const data = response.data;
                 
-                console.log(`API Response received for ${symbol} (${interval}):`, data);
-
                 if (data.success && data.data && Array.isArray(data.data.candles)) {
                     // 1. Filter out any malformed objects
                     // 2. Sort strictly by time (required by Lightweight Charts)
@@ -112,19 +110,7 @@ const ChartContainer = ({
                         throw new Error('No valid data points found for this timeframe');
                     }
 
-                    console.log(`Setting ${cleanData.length} candles to chart`);
                     candlestickSeries.setData(cleanData);
-                    const drawingTime = 1781861400;
-
-console.log(
-    "Drawing timestamp:",
-    drawingTime
-);
-
-console.log(
-    "Exists in current candles:",
-    cleanData.some(c => c.time === drawingTime)
-);
                     chart.timeScale().fitContent();
                 } else {
                     throw new Error(data.message || 'Malformed API response structure');
@@ -199,6 +185,7 @@ console.log(
                 chart={chartInstance}
                 series={seriesInstance}
                 candles={candles}
+                currentInterval={interval}
             />
 
             <FloatingDrawingToolbar
@@ -206,6 +193,7 @@ console.log(
                 chart={chartInstance}
                 series={seriesInstance}
                 chartContainerRef={chartContainerRef}
+                candles={candles}
                 onStyleChange={onStyleChange}
                 onSave={onSaveSelectedDrawing}
                 onDelete={onDeleteSelectedDrawing}

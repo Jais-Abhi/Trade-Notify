@@ -20,7 +20,8 @@ const DrawingLayer = ({
     onDragStart,
     chart, 
     series,
-    candles = []
+    candles = [],
+    currentInterval = '5m'
 }) => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState(null); // { time, price }
@@ -236,6 +237,7 @@ const DrawingLayer = ({
                         width: activeToolConfig?.style?.width || 2,
                         lineStyle: activeToolConfig?.style?.lineStyle || 'solid'
                     },
+                    createdInterval: currentInterval,
                     options: {
                         ...activeToolConfig?.options
                     }

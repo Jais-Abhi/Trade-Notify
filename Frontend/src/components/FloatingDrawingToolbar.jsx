@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
+import resolveRenderableTime from '../utils/resolveRenderableTime';
 
 const FloatingDrawingToolbar = ({
     selectedDrawing,
     chart,
     series,
     chartContainerRef,
+    candles = [],
     onStyleChange,
     onSave,
     onDelete,
@@ -36,12 +38,14 @@ const FloatingDrawingToolbar = ({
             const chartRect = chartContainerRef.current.getBoundingClientRect();
             const canvasRect = canvas.getBoundingClientRect();
 
+            const resolvedStartTime = resolveRenderableTime(selectedDrawing.start.time, candles);
+            const resolvedEndTime = resolveRenderableTime(selectedDrawing.end.time, candles);
             const startCoord = {
-                x: chart.timeScale().timeToCoordinate(selectedDrawing.start.time),
+                x: chart.timeScale().timeToCoordinate(resolvedStartTime),
                 y: series.priceToCoordinate(selectedDrawing.start.price)
             };
             const endCoord = {
-                x: chart.timeScale().timeToCoordinate(selectedDrawing.end.time),
+                x: chart.timeScale().timeToCoordinate(resolvedEndTime),
                 y: series.priceToCoordinate(selectedDrawing.end.price)
             };
 
@@ -72,7 +76,7 @@ const FloatingDrawingToolbar = ({
 
         rafId = requestAnimationFrame(updatePosition);
         return () => cancelAnimationFrame(rafId);
-    }, [selectedDrawing?.id, selectedDrawing?.start?.time, selectedDrawing?.start?.price, selectedDrawing?.end?.time, selectedDrawing?.end?.price, chart, series, chartContainerRef]);
+    }, [selectedDrawing?.id, selectedDrawing?.start?.time, selectedDrawing?.start?.price, selectedDrawing?.end?.time, selectedDrawing?.end?.price, chart, series, chartContainerRef, candles]);
 
     useEffect(() => {
         const handleDocumentClick = (event) => {

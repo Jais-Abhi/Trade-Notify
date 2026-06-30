@@ -8,42 +8,42 @@ const resolveRenderableTime = (drawingTime, candles = []) => {
         return null;
     }
 
-    const candleTimes = candles
-        .map((candle) => Number(candle?.time))
-        .filter((value) => Number.isFinite(value))
-        .sort((a, b) => a - b);
+    const firstCandleTime = Number(candles[0]?.time);
+    const lastCandleTime = Number(candles[candles.length - 1]?.time);
 
-    if (candleTimes.length === 0) {
+    if (!Number.isFinite(firstCandleTime) || !Number.isFinite(lastCandleTime)) {
         return null;
     }
 
-    if (normalizedDrawingTime < candleTimes[0]) {
-        return null;
-    }
-
-    if (normalizedDrawingTime > candleTimes[candleTimes.length - 1]) {
+    if (normalizedDrawingTime < firstCandleTime || normalizedDrawingTime > lastCandleTime) {
         return null;
     }
 
     let left = 0;
-    let right = candleTimes.length - 1;
+    let right = candles.length - 1;
+    let bestMatch = null;
 
     while (left <= right) {
         const middle = Math.floor((left + right) / 2);
-        const candleTime = candleTimes[middle];
+        const candleTime = Number(candles[middle]?.time);
+
+        if (!Number.isFinite(candleTime)) {
+            return null;
+        }
 
         if (candleTime === normalizedDrawingTime) {
             return candleTime;
         }
 
         if (candleTime < normalizedDrawingTime) {
+            bestMatch = candleTime;
             left = middle + 1;
         } else {
             right = middle - 1;
         }
     }
 
-    return candleTimes[Math.max(0, right)] ?? null;
+    return bestMatch;
 };
 
 export default resolveRenderableTime;
