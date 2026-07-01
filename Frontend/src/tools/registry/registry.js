@@ -1,4 +1,4 @@
-import trendline from '../groups/lines/trendline';
+import trendline from '../groups/lines/trendline/trendline.tool.js';
 
 const IMPLEMENTATIONS = {
     trendline,
@@ -8,7 +8,6 @@ export const getToolImplementation = (tool) => IMPLEMENTATIONS[tool] || IMPLEMEN
 
 export const getToolRenderer = (tool) => {
     const impl = getToolImplementation(tool);
-    // each implementation exposes render and hitTest
     return {
         render: impl.render,
         hitTest: impl.hitTest,
