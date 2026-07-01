@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import resolveRenderableTime from '../utils/resolveRenderableTime';
+import { getToolRenderer } from '../utils/drawingRegistry';
+import { createDrawing, getDrawingVisualStyle } from '../utils/drawingUtils';
+import DrawingRenderer from './DrawingRenderer';
 
 /**
  * DrawingLayer handles the SVG overlay for manual chart drawings.
@@ -42,6 +45,24 @@ const DrawingLayer = ({
         const time = chart.timeScale().coordinateToTime(x);
         const price = series.coordinateToPrice(y);
         return { time, price, x, y };
+    };
+
+    const getRenderer = (tool) => getToolRenderer(tool);
+
+    const getDrawingAtPoint = (x, y) => {
+        if (!chart || !series) return null;
+
+        const point = { x, y };
+        for (let index = lines.length - 1; index >= 0; index -= 1) {
+            const drawing = lines[index];
+            const renderer = getRenderer(drawing.tool);
+            const renderData = renderer.render(drawing, { chart, series, candles });
+            if (renderData.visible && renderer.hitTest?.(drawing, point, { chart, series, candles })) {
+                return drawing;
+            }
+        }
+
+        return null;
     };
 
     // Animation loop for perfectly smooth real-time updates
@@ -95,16 +116,12 @@ const DrawingLayer = ({
                     const lineData = lines.find(l => l.id.toString() === id);
                     if (!lineData) return;
 
-                    const resolvedStartTime = resolveRenderableTime(lineData.start.time, candles);
-                    const resolvedEndTime = resolveRenderableTime(lineData.end.time, candles);
-                    const p1 = {
-                        x: resolvedStartTime == null ? null : chart.timeScale().timeToCoordinate(resolvedStartTime),
-                        y: series.priceToCoordinate(lineData.start.price)
-                    };
-                    const p2 = {
-                        x: resolvedEndTime == null ? null : chart.timeScale().timeToCoordinate(resolvedEndTime),
-                        y: series.priceToCoordinate(lineData.end.price)
-                    };
+                    const renderer = getRenderer(lineData.tool);
+                    const renderData = renderer.render(lineData, {
+                        chart,
+                        series,
+                        candles,
+                    });
 
                     const svgLines = g.querySelectorAll('line');
                     const hitLine = svgLines[0];
@@ -112,27 +129,32 @@ const DrawingLayer = ({
                     const c1 = g.querySelector('.c1');
                     const c2 = g.querySelector('.c2');
 
-                    if (p1.x !== null && p1.y !== null && p2.x !== null && p2.y !== null) {
+                    if (renderData.visible && renderData.start && renderData.end) {
                         g.setAttribute('display', 'block');
                         if (hitLine) {
-                            hitLine.setAttribute('x1', p1.x);
-                            hitLine.setAttribute('y1', p1.y);
-                            hitLine.setAttribute('x2', p2.x);
-                            hitLine.setAttribute('y2', p2.y);
+                            hitLine.setAttribute('x1', renderData.start.x);
+                            hitLine.setAttribute('y1', renderData.start.y);
+                            hitLine.setAttribute('x2', renderData.end.x);
+                            hitLine.setAttribute('y2', renderData.end.y);
                         }
                         if (visualLine) {
-                            visualLine.setAttribute('x1', p1.x);
-                            visualLine.setAttribute('y1', p1.y);
-                            visualLine.setAttribute('x2', p2.x);
-                            visualLine.setAttribute('y2', p2.y);
+                            const style = getDrawingVisualStyle(lineData, lineData.id === selectedDrawingId, activeToolConfig);
+                            visualLine.setAttribute('x1', renderData.start.x);
+                            visualLine.setAttribute('y1', renderData.start.y);
+                            visualLine.setAttribute('x2', renderData.end.x);
+                            visualLine.setAttribute('y2', renderData.end.y);
+                            visualLine.setAttribute('stroke', style.color);
+                            visualLine.setAttribute('stroke-width', style.selectedWidth);
+                            visualLine.setAttribute('stroke-dasharray', style.dasharray);
+                            visualLine.setAttribute('opacity', style.opacity);
                         }
                         if (c1) {
-                            c1.setAttribute('cx', p1.x);
-                            c1.setAttribute('cy', p1.y);
+                            c1.setAttribute('cx', renderData.start.x);
+                            c1.setAttribute('cy', renderData.start.y);
                         }
                         if (c2) {
-                            c2.setAttribute('cx', p2.x);
-                            c2.setAttribute('cy', p2.y);
+                            c2.setAttribute('cx', renderData.end.x);
+                            c2.setAttribute('cy', renderData.end.y);
                         }
                     } else {
                         g.setAttribute('display', 'none');
@@ -182,36 +204,30 @@ const DrawingLayer = ({
                 }
             }
 
-            // 2. Check if clicking on the hit-line body of any drawing
-            const lineTarget = e.target.closest('[data-line-body-id]');
-            if (lineTarget) {
-                const lineId = lineTarget.getAttribute('data-line-body-id');
-                const line = lines.find(l => l.id.toString() === lineId);
-                if (line) {
-                    setSelectedDrawingId(line.id);
-                    // Snapshot will be pushed on first actual mouse movement, not here
-                    dragStateRef.current = {
-                        type: 'body',
-                        lineId: line.id,
-                        startMouseX: e.clientX,
-                        startMouseY: e.clientY,
-                        originalStart: { ...line.start },
-                        originalEnd: { ...line.end },
-                        originalStartPix: {
-                            x: chart.timeScale().timeToCoordinate(resolveRenderableTime(line.start.time, candles)),
-                            y: series.priceToCoordinate(line.start.price)
-                        },
-                        originalEndPix: {
-                            x: chart.timeScale().timeToCoordinate(resolveRenderableTime(line.end.time, candles)),
-                            y: series.priceToCoordinate(line.end.price)
-                        },
-                        snapshotLines: [...lines], // Pre-drag snapshot for history
-                        hasMoved: false            // Only push history after first real move
-                    };
-                    e.stopPropagation();
-                    e.preventDefault();
-                    return;
-                }
+            const hitDrawing = getDrawingAtPoint(x, y);
+            if (hitDrawing) {
+                setSelectedDrawingId(hitDrawing.id);
+                dragStateRef.current = {
+                    type: 'body',
+                    lineId: hitDrawing.id,
+                    startMouseX: e.clientX,
+                    startMouseY: e.clientY,
+                    originalStart: { ...hitDrawing.start },
+                    originalEnd: { ...hitDrawing.end },
+                    originalStartPix: {
+                        x: chart.timeScale().timeToCoordinate(resolveRenderableTime(hitDrawing.start.time, candles)),
+                        y: series.priceToCoordinate(hitDrawing.start.price)
+                    },
+                    originalEndPix: {
+                        x: chart.timeScale().timeToCoordinate(resolveRenderableTime(hitDrawing.end.time, candles)),
+                        y: series.priceToCoordinate(hitDrawing.end.price)
+                    },
+                    snapshotLines: [...lines],
+                    hasMoved: false
+                };
+                e.stopPropagation();
+                e.preventDefault();
+                return;
             }
 
             // 3. Clicked empty space
@@ -228,21 +244,13 @@ const DrawingLayer = ({
                 setStartPoint({ time: pos.time, price: pos.price });
                 setIsDrawing(true);
             } else {
-                const newLine = {
-                    start: startPoint,
-                    end: { time: pos.time, price: pos.price },
-                    id: Date.now(),
+                const newLine = createDrawing({
                     tool: activeTool || 'trendline',
-                    style: {
-                        color: activeToolConfig?.style?.color,
-                        width: activeToolConfig?.style?.width || 2,
-                        lineStyle: activeToolConfig?.style?.lineStyle || 'solid'
-                    },
-                    createdInterval: currentInterval,
-                    options: {
-                        ...activeToolConfig?.options
-                    }
-                };
+                    startPoint,
+                    endPoint: { time: pos.time, price: pos.price },
+                    activeToolConfig,
+                    currentInterval,
+                });
                 updateDrawingLinesWithHistory(prev => [...prev, newLine]);
                 setIsDrawing(false);
                 setStartPoint(null);
@@ -372,53 +380,16 @@ const DrawingLayer = ({
             <g ref={linesGroupRef}>
                 {lines.map((line) => {
                     const isSelected = line.id === selectedDrawingId;
-                    const lineColor = line.style?.color ;
-                    const lineWidth = line.style?.width || 2;
-                    const selectedWidth = isSelected ? Math.max(lineWidth + 1, 2.5) : lineWidth;
-                    const lineStyle = line.style?.lineStyle || 'solid';
-                    const lineDash = lineStyle === 'dashed' ? '6, 4' : '4, 4';
-
                     return (
                         <g key={line.id} data-line-id={line.id} display="none">
-                            {/* Hit Area — invisible thick line for easy pointer interaction */}
-                            <line
-                                stroke="transparent"
-                                strokeWidth="12"
-                                data-line-body-id={line.id}
-                                style={{ pointerEvents: 'stroke', cursor: 'pointer' }}
-                            />
-                            {/* Visual Line */}
-                            <line
-                                stroke={lineColor}
-                                strokeWidth={selectedWidth}
-                                strokeLinecap="round"
-                                filter="url(#glow)"
-                                strokeDasharray={lineStyle === 'solid' ? '0' : lineDash}
-                                style={{ pointerEvents: 'none', opacity: isSelected ? 1 : 0.75 }}
-                            />
-                            {/* Endpoint Handle P1 — always in DOM; visibility controlled by RAF via display attr */}
-                            <circle
-                                className="c1"
-                                data-line-id={line.id}
-                                data-handle="1"
-                                r="5"
-                                fill="#ffffff"
-                                stroke={lineColor}
-                                strokeWidth="2.5"
-                                display={isSelected ? 'block' : 'none'}
-                                style={{ pointerEvents: isSelected ? 'all' : 'none', cursor: 'move' }}
-                            />
-                            {/* Endpoint Handle P2 — always in DOM; visibility controlled by RAF via display attr */}
-                            <circle
-                                className="c2"
-                                data-line-id={line.id}
-                                data-handle="2"
-                                r="5"
-                                fill="#ffffff"
-                                stroke={lineColor}
-                                strokeWidth="2.5"
-                                display={isSelected ? 'block' : 'none'}
-                                style={{ pointerEvents: isSelected ? 'all' : 'none', cursor: 'move' }}
+                            <DrawingRenderer
+                                drawing={line}
+                                isSelected={isSelected}
+                                selectedDrawingId={selectedDrawingId}
+                                chart={chart}
+                                series={series}
+                                candles={candles}
+                                activeToolConfig={activeToolConfig}
                             />
                         </g>
                     );

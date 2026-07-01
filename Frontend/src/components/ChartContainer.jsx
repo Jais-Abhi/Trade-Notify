@@ -194,6 +194,7 @@ const ChartContainer = ({
                 series={seriesInstance}
                 chartContainerRef={chartContainerRef}
                 candles={candles}
+                toolDefinition={selectedTool}
                 onStyleChange={onStyleChange}
                 onSave={onSaveSelectedDrawing}
                 onDelete={onDeleteSelectedDrawing}

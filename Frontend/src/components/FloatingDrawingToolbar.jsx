@@ -7,6 +7,7 @@ const FloatingDrawingToolbar = ({
     series,
     chartContainerRef,
     candles = [],
+    toolDefinition,
     onStyleChange,
     onSave,
     onDelete,
@@ -14,6 +15,7 @@ const FloatingDrawingToolbar = ({
     onClose
 }) => {
     const toolbarRef = useRef(null);
+    const supports = toolDefinition?.supports || {};
     const selectedDrawingColor = selectedDrawing?.style?.color || '#3b82f6';
     const [color, setColor] = useState(selectedDrawingColor);
 
@@ -123,18 +125,22 @@ const FloatingDrawingToolbar = ({
             style={{ transform: 'translate(-50%, -100%)', minWidth: '240px', display: 'none' }}
             onMouseDown={(e) => e.stopPropagation()}
         >
-            <div className="flex items-center gap-2">
-                <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
-                <input
-                    id="toolbar-color-picker"
-                    type="color"
-                    value={color}
-                    onChange={handleColorChange}
-                    className="w-10 h-10 p-0 border-0 rounded-lg cursor-pointer"
-                />
-            </div>
+            {supports.color && (
+                <>
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
+                        <input
+                            id="toolbar-color-picker"
+                            type="color"
+                            value={color}
+                            onChange={handleColorChange}
+                            className="w-10 h-10 p-0 border-0 rounded-lg cursor-pointer"
+                        />
+                    </div>
 
-            <div className="h-8 w-px bg-slate-700" />
+                    <div className="h-8 w-px bg-slate-700" />
+                </>
+            )}
 
             <button
                 onClick={handleSave}

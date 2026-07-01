@@ -13,9 +13,8 @@ const seedToolDefinitions = async () => {
     try {
         await connectDB();
 
-        const count = await ToolDefinition.countDocuments();
-        if (count === 0) {
-            await ToolDefinition.create({
+        const toolDefinitions = [
+            {
                 tool: 'trendline',
                 displayName: 'Trend Line',
                 category: 'Lines',
@@ -25,7 +24,8 @@ const seedToolDefinitions = async () => {
                 style: {
                     color: '#3b82f6',
                     width: 2,
-                    lineStyle: 'solid'
+                    lineStyle: 'solid',
+                    fillOpacity: 0.16
                 },
                 options: {
                     extendLeft: false,
@@ -37,11 +37,42 @@ const seedToolDefinitions = async () => {
                     lineStyle: true,
                     opacity: true
                 }
-            });
-            console.log('Seeded ToolDefinition: trendline');
-        } else {
-            console.log('ToolDefinition collection already seeded');
+            },
+            {
+                tool: 'pricerange',
+                displayName: 'Price Range',
+                category: 'Measures',
+                icon: 'price-range',
+                order: 2,
+                enabled: true,
+                style: {
+                    color: '#f59e0b',
+                    width: 2,
+                    lineStyle: 'solid',
+                    fillOpacity: 0.16
+                },
+                options: {
+                    showLabel: true
+                },
+                supports: {
+                    color: true,
+                    width: true,
+                    lineStyle: true,
+                    opacity: true,
+                    fillOpacity: true
+                }
+            }
+        ];
+
+        for (const toolDefinition of toolDefinitions) {
+            await ToolDefinition.updateOne(
+                { tool: toolDefinition.tool },
+                { $set: toolDefinition },
+                { upsert: true }
+            );
         }
+
+        console.log('Seeded/updated tool definitions');
 
         process.exit(0);
     } catch (error) {
