@@ -58,6 +58,10 @@ const chartDrawingSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    interval: {
+        type: String,
+        required: true,
+    },
     drawings: [drawingItemSchema]
 }, {
     timestamps: true

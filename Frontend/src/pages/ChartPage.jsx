@@ -100,6 +100,10 @@ const ChartPage = () => {
                         return null;
                     }).filter(Boolean);
                     setDrawingLines(loaded);
+                    // If backend returns interval, update selectedInterval to reflect persisted value
+                    if (response.data.interval) {
+                        setSelectedInterval(response.data.interval);
+                    }
                 }
             } catch (err) {
                 console.error('Failed to load drawings', err);
@@ -118,6 +122,7 @@ const ChartPage = () => {
                 const defaultTool = tools.find((tool) => tool.tool === 'trendline');
                 const payload = {
                     symbol,
+                    interval: selectedInterval,
                     drawings: drawingLines.map(line => ({
                         id: line.id.toString(),
                         tool: line.tool || 'trendline',
@@ -201,6 +206,7 @@ const ChartPage = () => {
             const defaultTool = tools.find((tool) => tool.tool === toolId);
             const payload = {
                 symbol,
+                interval: selectedInterval,
                 drawings: updatedDrawingLines.map(line => ({
                     id: line.id.toString(),
                     tool: line.tool || 'trendline',

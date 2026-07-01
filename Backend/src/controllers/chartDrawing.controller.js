@@ -7,7 +7,7 @@ import ChartDrawing from '../models/ChartDrawing.js';
  */
 export const saveDrawings = async (req, res) => {
     try {
-        const { symbol, drawings } = req.body;
+        const { symbol, drawings, interval } = req.body;
         console.log(symbol,drawings);
         const userId = req.user._id;
 
@@ -36,17 +36,28 @@ export const saveDrawings = async (req, res) => {
             }
         }
 
+        // Interval is required for persistence
+        if (!interval || typeof interval !== 'string') {
+            return res.status(400).json({
+                success: false,
+                message: 'Interval is required and must be a string'
+            });
+        }
+
         // Find and update or create new document (keyed by userId + symbol only)
+        // We intentionally keep the lookup keyed by userId+symbol to preserve existing behavior
+        // while persisting the provided `interval` value on the document.
         const drawingDoc = await ChartDrawing.findOneAndUpdate(
             { userId, symbol },
-            { drawings },
+            { drawings, interval },
             { new: true, upsert: true, runValidators: true }
         );
 
         return res.status(200).json({
             success: true,
             message: 'Drawings saved successfully',
-            data: drawingDoc.drawings
+            data: drawingDoc.drawings,
+            interval: drawingDoc.interval
         });
 
     } catch (error) {
@@ -81,7 +92,8 @@ export const loadDrawings = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            data: drawingDoc ? drawingDoc.drawings : []
+            data: drawingDoc ? drawingDoc.drawings : [],
+            interval: drawingDoc ? drawingDoc.interval : null
         });
 
     } catch (error) {
