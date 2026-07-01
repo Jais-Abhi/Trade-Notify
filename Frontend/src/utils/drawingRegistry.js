@@ -1,4 +1,4 @@
-import { getDrawingMetadataEntries, getTrendLineMetrics } from './drawingUtils';
+import { getTrendLineMetrics } from './drawingUtils';
 
 const TOOL_RENDERERS = {
     trendline: {
@@ -25,7 +25,6 @@ const TOOL_RENDERERS = {
             const dist = Math.hypot(point.x - nearestX, point.y - nearestY);
             return dist <= 8;
         },
-        getMetadata: (drawing, context) => getDrawingMetadataEntries(drawing, context),
     },
 };
 

@@ -20,6 +20,7 @@ class MarketDataService {
             });
 
             const data = response.data;
+            console.log(data.chart.result)
             
             // Validate response structure
             if (!data || !data.chart || !data.chart.result || data.chart.result.length === 0) {

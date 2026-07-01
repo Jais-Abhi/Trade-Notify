@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import resolveRenderableTime from '../utils/resolveRenderableTime';
-import { getToolRenderer } from '../utils/drawingRegistry';
+import { getDrawingMetadata } from '../utils/drawingMetadata';
 
 const FloatingDrawingToolbar = ({
     selectedDrawing,
@@ -8,7 +8,6 @@ const FloatingDrawingToolbar = ({
     series,
     chartContainerRef,
     candles = [],
-    interval,
     toolDefinition,
     onStyleChange,
     onSave,
@@ -18,15 +17,13 @@ const FloatingDrawingToolbar = ({
 }) => {
     const toolbarRef = useRef(null);
     const supports = toolDefinition?.supports || {};
-    const renderer = getToolRenderer(selectedDrawing?.tool);
-    const metadataEntries = renderer.getMetadata?.(selectedDrawing, {
-        interval: selectedDrawing?.createdInterval || interval,
-    }) || [];
     const selectedDrawingColor = selectedDrawing?.style?.color || '#3b82f6';
     const selectedDrawingWidth = selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? 2;
     const [color, setColor] = useState(selectedDrawingColor);
     const [width, setWidth] = useState(selectedDrawingWidth);
     const [errorMessage, setErrorMessage] = useState('');
+    const [showDetails, setShowDetails] = useState(false);
+    const metadataRows = getDrawingMetadata({ drawing: selectedDrawing, chart, series, candles });
 
     useEffect(() => {
         setColor((prevColor) => (prevColor === selectedDrawingColor ? prevColor : selectedDrawingColor));
@@ -81,10 +78,12 @@ const FloatingDrawingToolbar = ({
 
             const midX = (startCoord.x + endCoord.x) / 2;
             const topY = Math.min(startCoord.y, endCoord.y) - 12;
+            const maxLeft = Math.max(16, Math.min(chartRect.width - 340, canvasRect.left - chartRect.left + midX));
+            const maxTop = Math.max(16, Math.min(chartRect.height - 220, canvasRect.top - chartRect.top + topY));
 
             toolbarRef.current.style.display = 'flex';
-            toolbarRef.current.style.left = `${canvasRect.left - chartRect.left + midX}px`;
-            toolbarRef.current.style.top = `${canvasRect.top - chartRect.top + topY}px`;
+            toolbarRef.current.style.left = `${maxLeft}px`;
+            toolbarRef.current.style.top = `${maxTop}px`;
 
             rafId = requestAnimationFrame(updatePosition);
         };
@@ -152,30 +151,26 @@ const FloatingDrawingToolbar = ({
     return (
         <div
             ref={toolbarRef}
-            className="absolute z-50 flex flex-col gap-3 px-3 py-2 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl shadow-slate-950/40 backdrop-blur-xl text-slate-100 pointer-events-auto transition-all"
-            style={{ transform: 'translate(-50%, -100%)', minWidth: '280px', display: 'none' }}
+            className="absolute z-50 flex flex-col gap-2 px-3 py-3 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl shadow-slate-950/40 backdrop-blur-xl text-slate-100 pointer-events-auto transition-all"
+            style={{ transform: 'translate(-50%, -100%)', minWidth: '320px', maxWidth: '360px', display: 'none' }}
             onMouseDown={(e) => e.stopPropagation()}
         >
             <div className="flex flex-wrap items-center gap-2">
                 {supports.color && (
-                    <>
-                        <div className="flex items-center gap-2">
-                            <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
-                            <input
-                                id="toolbar-color-picker"
-                                type="color"
-                                value={color}
-                                onChange={handleColorChange}
-                                className="w-10 h-10 p-0 border-0 rounded-lg cursor-pointer"
-                            />
-                        </div>
-
-                        <div className="h-8 w-px bg-slate-700" />
-                    </>
+                    <div className="flex items-center gap-2">
+                        <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
+                        <input
+                            id="toolbar-color-picker"
+                            type="color"
+                            value={color}
+                            onChange={handleColorChange}
+                            className="w-9 h-9 p-0 border-0 rounded-lg cursor-pointer"
+                        />
+                    </div>
                 )}
 
                 {supports.width && (
-                    <div className="flex items-center gap-2 min-w-[120px]">
+                    <div className="flex items-center gap-2 min-w-[140px]">
                         <label htmlFor="toolbar-width-range" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Width</label>
                         <input
                             id="toolbar-width-range"
@@ -190,7 +185,37 @@ const FloatingDrawingToolbar = ({
                         <span className="text-[11px] text-slate-300 min-w-[16px] text-center">{width}</span>
                     </div>
                 )}
+            </div>
 
+            <div className="flex items-center justify-end">
+                <button
+                    type="button"
+                    onClick={() => setShowDetails((prev) => !prev)}
+                    className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-200"
+                >
+                    {showDetails ? 'Hide Details' : 'Show Details'}
+                </button>
+            </div>
+
+            {showDetails && (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-2.5">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500 mb-2">Drawing Details</div>
+                    <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] text-slate-300">
+                        {metadataRows.map((row) => (
+                            <React.Fragment key={row.label}>
+                                <span className="text-slate-500 whitespace-nowrap">{row.label}</span>
+                                <span className="break-words">{row.value}</span>
+                            </React.Fragment>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {errorMessage && (
+                <div className="text-[11px] text-rose-400">{errorMessage}</div>
+            )}
+
+            <div className="flex items-center justify-end gap-2">
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
@@ -206,24 +231,6 @@ const FloatingDrawingToolbar = ({
                     Delete
                 </button>
             </div>
-
-            {metadataEntries.length > 0 && (
-                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-2.5">
-                    <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500 mb-2">Details</div>
-                    <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] text-slate-300">
-                        {metadataEntries.map((entry) => (
-                            <React.Fragment key={`${entry.label}-${entry.value}`}>
-                                <span className="text-slate-500">{entry.label}</span>
-                                <span className="font-medium text-slate-200 break-words">{entry.value}</span>
-                            </React.Fragment>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {errorMessage && (
-                <div className="text-[11px] text-rose-400">{errorMessage}</div>
-            )}
         </div>
     );
 };
