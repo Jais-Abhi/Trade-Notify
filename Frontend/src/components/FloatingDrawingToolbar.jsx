@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import resolveRenderableTime from '../utils/resolveRenderableTime';
 import { getDrawingMetadata } from '../utils/drawingMetadata';
+import { DEFAULT_DRAWING_STYLE } from '../utils/drawingUtils';
 
 const FloatingDrawingToolbar = ({
     selectedDrawing,
@@ -17,20 +18,20 @@ const FloatingDrawingToolbar = ({
 }) => {
     const toolbarRef = useRef(null);
     const supports = toolDefinition?.supports || {};
-    const selectedDrawingColor = selectedDrawing?.style?.color || '#3b82f6';
-    const selectedDrawingWidth = selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? 2;
+    const selectedDrawingColor = selectedDrawing?.style?.color ?? toolDefinition?.style?.color ?? DEFAULT_DRAWING_STYLE.color;
+    const selectedDrawingWidth = selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? DEFAULT_DRAWING_STYLE.width;
     const [color, setColor] = useState(selectedDrawingColor);
     const [width, setWidth] = useState(selectedDrawingWidth);
     const [errorMessage, setErrorMessage] = useState('');
     const [showDetails, setShowDetails] = useState(false);
-    const metadataRows = getDrawingMetadata({ drawing: selectedDrawing, chart, series, candles });
+    const metadataRows = getDrawingMetadata({ drawing: selectedDrawing, chart, series, candles, toolDefinition });
 
     useEffect(() => {
-        setColor((prevColor) => (prevColor === selectedDrawingColor ? prevColor : selectedDrawingColor));
+        setColor(selectedDrawingColor);
     }, [selectedDrawingColor]);
 
     useEffect(() => {
-        setWidth((prevWidth) => (prevWidth === selectedDrawingWidth ? prevWidth : selectedDrawingWidth));
+        setWidth(selectedDrawingWidth);
     }, [selectedDrawingWidth]);
 
     useEffect(() => {

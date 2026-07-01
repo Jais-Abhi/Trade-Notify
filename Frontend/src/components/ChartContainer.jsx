@@ -84,16 +84,16 @@ const ChartContainer = ({
                 localization: {
                     timeFormatter: (time) => {
                         const date = new Date(time * 1000);
-                        const formatter = new Intl.DateTimeFormat('en-IN', {
+                        const day = date.getDate();
+                        const month = date.toLocaleString('en-US', { month: 'short' }).toLowerCase();
+                        const year = `'${String(date.getFullYear()).slice(-2)}`;
+                        const timeLabel = new Intl.DateTimeFormat('en-IN', {
                             timeZone: 'Asia/Kolkata',
-                            day: 'numeric',
-                            month: 'short',
-                            year: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit',
                             hour12: false,
-                        });
-                        return formatter.format(date)
+                        }).format(date);
+                        return `${day} ${month}  ${year} ${timeLabel}`;
                     },
                 },
                 rightPriceScale: {

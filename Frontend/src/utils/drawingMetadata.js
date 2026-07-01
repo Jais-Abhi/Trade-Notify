@@ -17,7 +17,7 @@ export const formatPriceValue = (value) => {
     return Number(value).toFixed(2);
 };
 
-export const getDrawingMetadata = ({ drawing, chart, series, candles = [] }) => {
+export const getDrawingMetadata = ({ drawing, chart, series, candles = [], toolDefinition }) => {
     if (!drawing) return [];
 
     const resolvedStartTime = resolveRenderableTime(drawing?.start?.time, candles);
@@ -26,7 +26,7 @@ export const getDrawingMetadata = ({ drawing, chart, series, candles = [] }) => 
     const rows = [
         {
             label: 'Tool',
-            value: drawing.tool || 'trendline',
+            value: toolDefinition?.displayName || drawing.tool || 'Unknown Tool',
         },
         {
             label: 'Start Time',

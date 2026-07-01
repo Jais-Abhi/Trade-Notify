@@ -1,4 +1,4 @@
-import { getTrendLineMetrics, getPriceRangeMetrics } from './drawingUtils';
+import { getTrendLineMetrics } from './drawingUtils';
 
 const TOOL_RENDERERS = {
     trendline: {
@@ -26,50 +26,6 @@ const TOOL_RENDERERS = {
             return dist <= 8;
         },
     },
-    pricerange: {
-        render: (drawing, state) => {
-            const metrics = getPriceRangeMetrics({ drawing, ...state });
-            return {
-                ...metrics,
-                type: 'pricerange',
-            };
-        },
-        hitTest: (drawing, point, state) => {
-            const metrics = getPriceRangeMetrics({ drawing, ...state });
-            if (!metrics.visible || !metrics.bounds) return false;
-
-            const { x, y, width, height } = metrics.bounds;
-            return point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height;
-        },
-    },
 };
 
 export const getToolRenderer = (tool = 'trendline') => TOOL_RENDERERS[tool] || TOOL_RENDERERS.trendline;
-
-export const TOOL_DEFINITIONS = [
-    {
-        tool: 'trendline',
-        displayName: 'Trend Line',
-        category: 'Lines',
-        icon: 'trend-line',
-        order: 1,
-        enabled: true,
-        style: {
-            color: '#3b82f6',
-            width: 2,
-            lineStyle: 'solid',
-            opacity: 0.75,
-            fillOpacity: 0.16,
-        },
-        options: {
-            extendLeft: false,
-            extendRight: false,
-        },
-        supports: {
-            color: true,
-            width: true,
-            lineStyle: true,
-            opacity: true,
-        },
-    },
-];

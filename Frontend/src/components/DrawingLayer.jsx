@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import resolveRenderableTime from '../utils/resolveRenderableTime';
 import { getToolRenderer } from '../utils/drawingRegistry';
-import { createDrawing, getDrawingVisualStyle } from '../utils/drawingUtils';
+import { createDrawing, getDrawingVisualStyle, DEFAULT_DRAWING_STYLE } from '../utils/drawingUtils';
 import DrawingRenderer from './DrawingRenderer';
 
 /**
@@ -31,7 +31,6 @@ const DrawingLayer = ({
     
     const svgRef = useRef(null);
     const previewLineRef = useRef(null);
-    const previewRectRef = useRef(null);
     const linesGroupRef = useRef(null);
     
     // Store mouse position in a ref to avoid React state updates during move
@@ -88,62 +87,30 @@ const DrawingLayer = ({
                 svgRef.current.style.height = `${mainRect.height}px`;
             }
 
-            // 1. Update Preview shape if drawing
-            const resolvedStartTime = resolveRenderableTime(startPoint?.time, candles);
-            const p1 = startPoint ? {
-                x: resolvedStartTime == null ? null : chart.timeScale().timeToCoordinate(resolvedStartTime),
-                y: series.priceToCoordinate(startPoint.price)
-            } : null;
-            const previewStyle = getDrawingVisualStyle({ style: activeToolConfig?.style }, false, activeToolConfig);
-
-            if (isDrawing && p1 && p1.x !== null && p1.y !== null) {
-                const p2 = {
-                    x: mousePosRef.current.x,
-                    y: mousePosRef.current.y,
+            // 1. Update Preview Line if drawing
+            if (isDrawing && startPoint && previewLineRef.current) {
+                const resolvedStartTime = resolveRenderableTime(startPoint.time, candles);
+                const p1 = {
+                    x: resolvedStartTime == null ? null : chart.timeScale().timeToCoordinate(resolvedStartTime),
+                    y: series.priceToCoordinate(startPoint.price)
                 };
-
-                if (activeTool === 'pricerange' && previewRectRef.current) {
-                    const x = Math.min(p1.x, p2.x);
-                    const y = Math.min(p1.y, p2.y);
-                    const width = Math.abs(p2.x - p1.x);
-                    const height = Math.abs(p2.y - p1.y);
-
-                    previewRectRef.current.setAttribute('x', x);
-                    previewRectRef.current.setAttribute('y', y);
-                    previewRectRef.current.setAttribute('width', width);
-                    previewRectRef.current.setAttribute('height', height);
-                    previewRectRef.current.setAttribute('stroke', previewStyle.color);
-                    previewRectRef.current.setAttribute('stroke-width', previewStyle.width);
-                    previewRectRef.current.setAttribute('stroke-dasharray', previewStyle.dasharray);
-                    previewRectRef.current.setAttribute('fill', previewStyle.color);
-                    previewRectRef.current.setAttribute('fill-opacity', previewStyle.fillOpacity * 0.45);
-                    previewRectRef.current.setAttribute('opacity', previewStyle.opacity);
-                    previewRectRef.current.setAttribute('display', 'block');
-
-                    if (previewLineRef.current) {
-                        previewLineRef.current.setAttribute('display', 'none');
-                    }
-                } else if (previewLineRef.current) {
+                const previewStyle = getDrawingVisualStyle({ style: activeToolConfig?.style }, false, activeToolConfig);
+                
+                if (p1.x !== null && p1.y !== null) {
                     previewLineRef.current.setAttribute('x1', p1.x);
                     previewLineRef.current.setAttribute('y1', p1.y);
-                    previewLineRef.current.setAttribute('x2', p2.x);
-                    previewLineRef.current.setAttribute('y2', p2.y);
+                    previewLineRef.current.setAttribute('x2', mousePosRef.current.x);
+                    previewLineRef.current.setAttribute('y2', mousePosRef.current.y);
                     previewLineRef.current.setAttribute('stroke', previewStyle.color);
                     previewLineRef.current.setAttribute('stroke-width', previewStyle.width);
                     previewLineRef.current.setAttribute('stroke-dasharray', previewStyle.dasharray);
                     previewLineRef.current.setAttribute('opacity', previewStyle.opacity);
                     previewLineRef.current.setAttribute('display', 'block');
-                    if (previewRectRef.current) {
-                        previewRectRef.current.setAttribute('display', 'none');
-                    }
-                }
-            } else {
-                if (previewLineRef.current) {
+                } else {
                     previewLineRef.current.setAttribute('display', 'none');
                 }
-                if (previewRectRef.current) {
-                    previewRectRef.current.setAttribute('display', 'none');
-                }
+            } else if (previewLineRef.current) {
+                previewLineRef.current.setAttribute('display', 'none');
             }
 
             // 2. Update all finalized lines in the group
@@ -269,17 +236,21 @@ const DrawingLayer = ({
             }
 
             // 3. Clicked empty space
-            setSelectedDrawingId(null);
+            if (!activeTool) {
+                setSelectedDrawingId(null);
+                return;
+            }
 
+            // Drawing creation mode
             const pos = pixelToCoords(x, y);
             if (!pos || pos.time === null || pos.price === null) return;
-
+            
             if (!isDrawing) {
                 setStartPoint({ time: pos.time, price: pos.price });
                 setIsDrawing(true);
             } else {
                 const newLine = createDrawing({
-                    tool: activeTool || 'trendline',
+                    tool: activeTool,
                     startPoint,
                     endPoint: { time: pos.time, price: pos.price },
                     activeToolConfig,
@@ -433,8 +404,8 @@ const DrawingLayer = ({
             {/* Preview Line (Only shown during active drawing) */}
             <line
                 ref={previewLineRef}
-                stroke={activeToolConfig?.style?.color || '#3b82f6'}
-                strokeWidth={activeToolConfig?.style?.width || 1.5}
+                stroke={activeToolConfig?.style?.color ?? DEFAULT_DRAWING_STYLE.color}
+                strokeWidth={activeToolConfig?.style?.width ?? DEFAULT_DRAWING_STYLE.width}
                 strokeDasharray="0"
                 opacity="0.6"
                 display="none"

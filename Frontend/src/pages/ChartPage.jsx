@@ -6,6 +6,7 @@ import api from '../api/axios';
 import { ArrowLeft, Share2, Settings, Maximize2, ChevronDown, Loader2, Clock, Star, Save, CheckCircle2, XCircle, Undo2, Redo2 } from 'lucide-react';
 import { addToWishlist, removeFromWishlist } from '../features/wishlist/wishlistSlice';
 import { setActiveTool, updateToolPreference } from '../features/drawingTool/drawingToolSlice';
+import { DEFAULT_DRAWING_STYLE } from '../utils/drawingUtils';
 
 const ChartPage = () => {
     const { symbol } = useParams();
@@ -87,17 +88,15 @@ const ChartPage = () => {
                 const response = await api.get(`/chart-drawings?symbol=${symbol}`);
                 if (response.data && response.data.success) {
                     const loaded = response.data.data.map(d => {
-                        if (d.tool === 'trendline' && d.points && d.points.length >= 2) {
-                            return {
-                                id: d.id,
-                                tool: d.tool,
-                                start: d.points[0],
-                                end: d.points[1],
-                                style: d.style || {},
-                                options: d.options || {}
-                            };
-                        }
-                        return null;
+                        if (!d || !Array.isArray(d.points) || d.points.length < 2) return null;
+                        return {
+                            id: d.id,
+                            tool: d.tool || (tools[0]?.tool ?? null),
+                            start: d.points[0],
+                            end: d.points[1],
+                            style: d.style || {},
+                            options: d.options || {},
+                        };
                     }).filter(Boolean);
                     setDrawingLines(loaded);
                     // If backend returns interval, update selectedInterval to reflect persisted value
@@ -113,32 +112,41 @@ const ChartPage = () => {
         fetchDrawings();
     }, [symbol]); // Only re-fetch when symbol changes — interval switches reuse the same drawings in React state
 
+    const resolveDefaultTool = (toolId) => {
+        if (!tools || tools.length === 0) return null;
+        return tools.find((tool) => tool.tool === toolId) || tools[0];
+    };
+
+    const normalizeDrawing = (line) => {
+        const defaultTool = resolveDefaultTool(line.tool);
+        return {
+            id: line.id.toString(),
+            tool: line.tool || defaultTool?.tool || null,
+            points: [
+                { time: line.start.time, price: line.start.price },
+                { time: line.end.time, price: line.end.price },
+            ],
+            style: {
+                color: line.style?.color ?? defaultTool?.style?.color ?? DEFAULT_DRAWING_STYLE.color,
+                width: line.style?.width ?? defaultTool?.style?.width ?? DEFAULT_DRAWING_STYLE.width,
+                lineStyle: line.style?.lineStyle ?? defaultTool?.style?.lineStyle ?? DEFAULT_DRAWING_STYLE.lineStyle,
+            },
+            options: line.options || defaultTool?.options || {},
+            locked: false,
+            visible: true,
+        };
+    };
+
     const handleSaveDrawings = async () => {
         setIsSaving(true);
         try {
             if (drawingLines.length === 0) {
                 await api.delete(`/chart-drawings?symbol=${symbol}`);
             } else {
-                const defaultTool = tools.find((tool) => tool.tool === 'trendline');
                 const payload = {
                     symbol,
                     interval: selectedInterval,
-                    drawings: drawingLines.map(line => ({
-                        id: line.id.toString(),
-                        tool: line.tool || 'trendline',
-                        points: [
-                            { time: line.start.time, price: line.start.price },
-                            { time: line.end.time, price: line.end.price }
-                        ],
-                        style: {
-                            color: line.style?.color || defaultTool?.style?.color || '#3b82f6',
-                            width: line.style?.width || defaultTool?.style?.width || 2,
-                            lineStyle: line.style?.lineStyle || defaultTool?.style?.lineStyle || 'solid'
-                        },
-                        options: line.options || defaultTool?.options || {},
-                        locked: false,
-                        visible: true
-                    }))
+                    drawings: drawingLines.map(normalizeDrawing),
                 };
                 await api.post('/chart-drawings/save', payload);
             }
@@ -167,6 +175,22 @@ const ChartPage = () => {
         }));
     };
 
+    const handleDeleteSelectedDrawing = async () => {
+        if (!selectedDrawingId) return;
+
+        const nextDrawingLines = drawingLines.filter((line) => line.id !== selectedDrawingId);
+        updateDrawingLinesWithHistory(nextDrawingLines);
+        setSelectedDrawingId(null);
+
+        try {
+            await api.delete(`/chart-drawings/${selectedDrawingId}?symbol=${symbol}`);
+            showToast('Drawing deleted', 'success');
+        } catch (err) {
+            console.error('Failed to delete selected drawing:', err);
+            showToast('Failed to delete drawing', 'error');
+        }
+    };
+
     const handleSaveSelectedDrawing = async (styleOverride = {}) => {
         if (!selectedDrawingId) return;
         const selectedDrawing = drawingLines.find((line) => line.id === selectedDrawingId);
@@ -193,37 +217,23 @@ const ChartPage = () => {
         setDrawingLines(updatedDrawingLines);
         setIsSaving(true);
         try {
-            const toolId = selectedDrawing.tool || 'trendline';
-            await dispatch(updateToolPreference({
-                toolId,
-                payload: {
-                    style: {
-                        color: nextStyle.color,
-                        width: nextStyle.width
-                    }
-                }
-            })).unwrap();
+            const toolId = selectedDrawing.tool || resolveDefaultTool(selectedDrawing.tool)?.tool;
+            if (toolId) {
+                await dispatch(updateToolPreference({
+                    toolId,
+                    payload: {
+                        style: {
+                            color: nextStyle.color,
+                            width: nextStyle.width,
+                        },
+                    },
+                })).unwrap();
+            }
 
-            const defaultTool = tools.find((tool) => tool.tool === toolId);
             const payload = {
                 symbol,
                 interval: selectedInterval,
-                drawings: updatedDrawingLines.map(line => ({
-                    id: line.id.toString(),
-                    tool: line.tool || 'trendline',
-                    points: [
-                        { time: line.start.time, price: line.start.price },
-                        { time: line.end.time, price: line.end.price }
-                    ],
-                    style: {
-                        color: line.style?.color || defaultTool?.style?.color || '#3b82f6',
-                        width: line.style?.width || defaultTool?.style?.width || 2,
-                        lineStyle: line.style?.lineStyle || defaultTool?.style?.lineStyle || 'solid'
-                    },
-                    options: line.options || defaultTool?.options || {},
-                    locked: false,
-                    visible: true
-                }))
+                drawings: updatedDrawingLines.map(normalizeDrawing),
             };
 
             await api.post('/chart-drawings/save', payload);
@@ -235,23 +245,6 @@ const ChartPage = () => {
             setIsSaving(false);
         }
     };
-
-    const handleDeleteSelectedDrawing = async () => {
-        if (!selectedDrawingId) return;
-
-        const nextDrawingLines = drawingLines.filter((line) => line.id !== selectedDrawingId);
-        updateDrawingLinesWithHistory(nextDrawingLines);
-        setSelectedDrawingId(null);
-
-        try {
-            await api.delete(`/chart-drawings/${selectedDrawingId}?symbol=${symbol}`);
-            showToast('Drawing deleted', 'success');
-        } catch (err) {
-            console.error('Failed to delete selected drawing:', err);
-            showToast('Failed to delete drawing', 'error');
-        }
-    };
-
     useEffect(() => {
         const fetchStockInfo = async () => {
             try {
