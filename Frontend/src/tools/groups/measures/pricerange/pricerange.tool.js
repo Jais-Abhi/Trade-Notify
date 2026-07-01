@@ -23,7 +23,13 @@ const render = (drawing, state) => {
 const hitTest = (drawing, point, state) => {
     const metrics = getPriceRangeMetrics({ drawing, ...state });
     if (!metrics.visible) return false;
-    return point.x >= metrics.left && point.x <= metrics.right && point.y >= metrics.top && point.y <= metrics.bottom;
+
+    const tolerance = 6;
+    const withinX = point.x >= metrics.left && point.x <= metrics.right;
+    const onTopLine = Math.abs(point.y - metrics.top) <= tolerance && withinX;
+    const onBottomLine = Math.abs(point.y - metrics.bottom) <= tolerance && withinX;
+
+    return onTopLine || onBottomLine;
 };
 
 const updateDom = (groupElement, metrics, style) => {

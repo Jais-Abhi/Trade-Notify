@@ -161,7 +161,7 @@ const ChartPage = () => {
 
     const handleStyleChange = (newStyle) => {
         if (!selectedDrawingId) return;
-        setDrawingLines(prev => prev.map((line) => {
+        updateDrawingLinesWithHistory(prev => prev.map((line) => {
             if (line.id === selectedDrawingId) {
                 return {
                     ...line,

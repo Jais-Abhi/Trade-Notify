@@ -7,7 +7,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
 
     const fillColor = style.color || '#22c55e';
     const strokeColor = style.color || '#22c55e';
-    const opacity = style.opacity ?? 0.18;
+    const fillOpacity = style.fillOpacity ?? 0.16;
     const arrowX = metrics.centerX;
     const arrowY1 = metrics.top + (metrics.height * 0.35);
     const arrowY2 = metrics.bottom - (metrics.height * 0.35);
@@ -22,7 +22,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                 width={metrics.width}
                 height={metrics.height}
                 fill={fillColor}
-                opacity={opacity}
+                opacity={fillOpacity}
                 pointerEvents="none"
             />
             <line
