@@ -84,12 +84,16 @@ const ChartContainer = ({
                 localization: {
                     timeFormatter: (time) => {
                         const date = new Date(time * 1000);
-                        return new Intl.DateTimeFormat('en-IN', {
+                        const formatter = new Intl.DateTimeFormat('en-IN', {
                             timeZone: 'Asia/Kolkata',
+                            day: 'numeric',
+                            month: 'short',
+                            year: '2-digit',
                             hour: '2-digit',
                             minute: '2-digit',
                             hour12: false,
-                        }).format(date);
+                        });
+                        return formatter.format(date)
                     },
                 },
                 rightPriceScale: {
