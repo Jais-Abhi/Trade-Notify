@@ -89,8 +89,8 @@ const DrawingLayer = ({
                 svgRef.current.style.height = `${mainRect.height}px`;
             }
 
-            // 1. Update Preview Line if drawing
-            if (isDrawing && startPoint && previewLineRef.current) {
+            // 1. Update Preview Line if drawing for tools that use line preview
+            if (activeTool !== 'pricerange' && isDrawing && startPoint && previewLineRef.current) {
                 const resolvedStartTime = resolveRenderableTime(startPoint.time, candles);
                 const p1 = {
                     x: resolvedStartTime == null ? null : chart.timeScale().timeToCoordinate(resolvedStartTime),
