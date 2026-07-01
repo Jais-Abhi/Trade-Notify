@@ -86,4 +86,4 @@ export const getLineDrawingMetrics = ({ drawing, chart, series, candles = [] }) 
     };
 };
 
-export const getTrendLineMetrics = (args) => getLineDrawingMetrics(args);
+// Trend-line specific metrics moved to tools/groups/lines/trendline/trendline.metrics.js

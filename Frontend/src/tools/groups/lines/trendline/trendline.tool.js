@@ -1,4 +1,4 @@
-import { getTrendLineMetrics } from '../../../../utils/drawingUtils';
+import { getTrendLineMetrics } from './trendline.metrics.js';
 
 const render = (drawing, state) => {
     const metrics = getTrendLineMetrics({ drawing, ...state });
