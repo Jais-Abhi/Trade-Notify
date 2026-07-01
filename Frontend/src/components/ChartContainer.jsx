@@ -71,6 +71,26 @@ const ChartContainer = ({
                     borderColor: '#1e293b',
                     timeVisible: true,
                     secondsVisible: false,
+                    tickMarkFormatter: (time) => {
+                        const date = new Date(time * 1000);
+                        return new Intl.DateTimeFormat('en-IN', {
+                            timeZone: 'Asia/Kolkata',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false,
+                        }).format(date);
+                    },
+                },
+                localization: {
+                    timeFormatter: (time) => {
+                        const date = new Date(time * 1000);
+                        return new Intl.DateTimeFormat('en-IN', {
+                            timeZone: 'Asia/Kolkata',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false,
+                        }).format(date);
+                    },
                 },
                 rightPriceScale: {
                     borderColor: '#1e293b',
