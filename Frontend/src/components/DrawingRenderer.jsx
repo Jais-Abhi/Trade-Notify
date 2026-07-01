@@ -1,6 +1,6 @@
 import React from 'react';
-import { getToolRenderer } from '../utils/drawingRegistry';
 import { getDrawingVisualStyle } from '../utils/drawingUtils';
+import { getToolImplementation } from '../tools/registry/registry';
 
 const DrawingRenderer = ({
     drawing,
@@ -11,16 +11,24 @@ const DrawingRenderer = ({
     candles,
     activeToolConfig,
 }) => {
-    const renderer = getToolRenderer(drawing?.tool);
+    const impl = getToolImplementation(drawing?.tool);
     const renderState = {
         chart,
         series,
         candles,
     };
-    const renderData = renderer.render(drawing, renderState);
+    const renderData = impl.render(drawing, renderState);
     const style = getDrawingVisualStyle(drawing, isSelected, activeToolConfig);
 
-    if (!renderData.visible || !renderData.start || !renderData.end) {
+    if (!renderData.visible) {
+        return null;
+    }
+
+    if (impl.Renderer) {
+        return <impl.Renderer metrics={renderData} style={style} />;
+    }
+
+    if (!renderData.start || !renderData.end) {
         return null;
     }
 

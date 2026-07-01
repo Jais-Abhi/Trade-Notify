@@ -1,7 +1,9 @@
 import trendline from '../groups/lines/trendline/trendline.tool.js';
+import pricerange from '../groups/measures/pricerange/pricerange.tool.js';
 
 const IMPLEMENTATIONS = {
     trendline,
+    pricerange,
 };
 
 export const getToolImplementation = (toolId) => IMPLEMENTATIONS[toolId] || IMPLEMENTATIONS.trendline;
@@ -15,12 +17,16 @@ export const getToolRenderer = (toolId) => {
 };
 
 export const getRegistryMetadata = () => {
-    // Build grouped metadata for toolbar consumption
     const groups = {
         lines: {
             key: 'lines',
             title: 'Lines',
-            tools: [trendline.META || trendline.UI?.META || { tool: 'trendline', displayName: 'Trend Line', icon: 'trendline' }],
+            tools: [trendline.META],
+        },
+        measures: {
+            key: 'measures',
+            title: 'Measures',
+            tools: [pricerange.META],
         },
     };
 

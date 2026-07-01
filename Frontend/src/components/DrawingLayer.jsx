@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import resolveRenderableTime from '../utils/resolveRenderableTime';
-import { getToolRenderer } from '../utils/drawingRegistry';
+import { getToolImplementation } from '../tools/registry/registry';
 import { createDrawing, getDrawingVisualStyle, DEFAULT_DRAWING_STYLE } from '../utils/drawingUtils';
 import DrawingRenderer from './DrawingRenderer';
+import PriceRangePreview from '../tools/groups/measures/pricerange/pricerange.preview.jsx';
 
 /**
  * DrawingLayer handles the SVG overlay for manual chart drawings.
@@ -28,6 +29,7 @@ const DrawingLayer = ({
 }) => {
     const [isDrawing, setIsDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState(null); // { time, price }
+    const [previewPoint, setPreviewPoint] = useState(null);
     
     const svgRef = useRef(null);
     const previewLineRef = useRef(null);
@@ -47,7 +49,7 @@ const DrawingLayer = ({
         return { time, price, x, y };
     };
 
-    const getRenderer = (tool) => getToolRenderer(tool);
+    const getTool = (tool) => getToolImplementation(tool);
 
     const getDrawingAtPoint = (x, y) => {
         if (!chart || !series) return null;
@@ -55,9 +57,9 @@ const DrawingLayer = ({
         const point = { x, y };
         for (let index = lines.length - 1; index >= 0; index -= 1) {
             const drawing = lines[index];
-            const renderer = getRenderer(drawing.tool);
-            const renderData = renderer.render(drawing, { chart, series, candles });
-            if (renderData.visible && renderer.hitTest?.(drawing, point, { chart, series, candles })) {
+            const toolImpl = getTool(drawing.tool);
+            const renderData = toolImpl.render(drawing, { chart, series, candles });
+            if (renderData.visible && toolImpl.hitTest?.(drawing, point, { chart, series, candles })) {
                 return drawing;
             }
         }
@@ -121,8 +123,8 @@ const DrawingLayer = ({
                     const lineData = lines.find(l => l.id.toString() === id);
                     if (!lineData) return;
 
-                    const renderer = getRenderer(lineData.tool);
-                    const renderData = renderer.render(lineData, {
+                    const toolImpl = getTool(lineData.tool);
+                    const renderData = toolImpl.render(lineData, {
                         chart,
                         series,
                         candles,
@@ -134,32 +136,36 @@ const DrawingLayer = ({
                     const c1 = g.querySelector('.c1');
                     const c2 = g.querySelector('.c2');
 
-                    if (renderData.visible && renderData.start && renderData.end) {
+                    if (renderData.visible) {
                         g.setAttribute('display', 'block');
-                        if (hitLine) {
-                            hitLine.setAttribute('x1', renderData.start.x);
-                            hitLine.setAttribute('y1', renderData.start.y);
-                            hitLine.setAttribute('x2', renderData.end.x);
-                            hitLine.setAttribute('y2', renderData.end.y);
-                        }
-                        if (visualLine) {
-                            const style = getDrawingVisualStyle(lineData, lineData.id === selectedDrawingId, activeToolConfig);
-                            visualLine.setAttribute('x1', renderData.start.x);
-                            visualLine.setAttribute('y1', renderData.start.y);
-                            visualLine.setAttribute('x2', renderData.end.x);
-                            visualLine.setAttribute('y2', renderData.end.y);
-                            visualLine.setAttribute('stroke', style.color);
-                            visualLine.setAttribute('stroke-width', style.selectedWidth);
-                            visualLine.setAttribute('stroke-dasharray', style.dasharray);
-                            visualLine.setAttribute('opacity', style.opacity);
-                        }
-                        if (c1) {
-                            c1.setAttribute('cx', renderData.start.x);
-                            c1.setAttribute('cy', renderData.start.y);
-                        }
-                        if (c2) {
-                            c2.setAttribute('cx', renderData.end.x);
-                            c2.setAttribute('cy', renderData.end.y);
+                        if (toolImpl.Renderer) {
+                            // tool-specific renderer handles its own DOM output
+                        } else if (renderData.start && renderData.end) {
+                            if (hitLine) {
+                                hitLine.setAttribute('x1', renderData.start.x);
+                                hitLine.setAttribute('y1', renderData.start.y);
+                                hitLine.setAttribute('x2', renderData.end.x);
+                                hitLine.setAttribute('y2', renderData.end.y);
+                            }
+                            if (visualLine) {
+                                const style = getDrawingVisualStyle(lineData, lineData.id === selectedDrawingId, activeToolConfig);
+                                visualLine.setAttribute('x1', renderData.start.x);
+                                visualLine.setAttribute('y1', renderData.start.y);
+                                visualLine.setAttribute('x2', renderData.end.x);
+                                visualLine.setAttribute('y2', renderData.end.y);
+                                visualLine.setAttribute('stroke', style.color);
+                                visualLine.setAttribute('stroke-width', style.selectedWidth);
+                                visualLine.setAttribute('stroke-dasharray', style.dasharray);
+                                visualLine.setAttribute('opacity', style.opacity);
+                            }
+                            if (c1) {
+                                c1.setAttribute('cx', renderData.start.x);
+                                c1.setAttribute('cy', renderData.start.y);
+                            }
+                            if (c2) {
+                                c2.setAttribute('cx', renderData.end.x);
+                                c2.setAttribute('cy', renderData.end.y);
+                            }
                         }
                     } else {
                         g.setAttribute('display', 'none');
@@ -270,6 +276,13 @@ const DrawingLayer = ({
             const y = e.clientY - rect.top;
             mousePosRef.current = { x, y };
 
+            if (isDrawing && startPoint) {
+                const pos = pixelToCoords(x, y);
+                if (pos && pos.time !== null && pos.price !== null) {
+                    setPreviewPoint(pos);
+                }
+            }
+
             if (!dragStateRef.current) return;
 
             const dx = e.clientX - dragStateRef.current.startMouseX;
@@ -339,6 +352,7 @@ const DrawingLayer = ({
                 e.preventDefault();
                 setIsDrawing(false);
                 setStartPoint(null);
+                setPreviewPoint(null);
             }
         };
 
@@ -410,6 +424,18 @@ const DrawingLayer = ({
                 opacity="0.6"
                 display="none"
             />
+            {isDrawing && startPoint && previewPoint && activeTool === 'pricerange' && (
+                <g>
+                    <PriceRangePreview
+                        startPoint={startPoint}
+                        currentPoint={previewPoint}
+                        chart={chart}
+                        series={series}
+                        candles={candles}
+                        style={activeToolConfig?.style || {}}
+                    />
+                </g>
+            )}
         </svg>
     );
 };
