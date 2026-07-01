@@ -198,7 +198,8 @@ const ChartPage = () => {
                 toolId,
                 payload: {
                     style: {
-                        color: nextStyle.color
+                        color: nextStyle.color,
+                        width: nextStyle.width
                     }
                 }
             })).unwrap();

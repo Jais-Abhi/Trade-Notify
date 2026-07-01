@@ -17,11 +17,18 @@ const FloatingDrawingToolbar = ({
     const toolbarRef = useRef(null);
     const supports = toolDefinition?.supports || {};
     const selectedDrawingColor = selectedDrawing?.style?.color || '#3b82f6';
+    const selectedDrawingWidth = selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? 2;
     const [color, setColor] = useState(selectedDrawingColor);
+    const [width, setWidth] = useState(selectedDrawingWidth);
+    const [errorMessage, setErrorMessage] = useState('');
 
     useEffect(() => {
         setColor((prevColor) => (prevColor === selectedDrawingColor ? prevColor : selectedDrawingColor));
     }, [selectedDrawingColor]);
+
+    useEffect(() => {
+        setWidth((prevWidth) => (prevWidth === selectedDrawingWidth ? prevWidth : selectedDrawingWidth));
+    }, [selectedDrawingWidth]);
 
     useEffect(() => {
         if (!selectedDrawing || !chart || !series || !chartContainerRef?.current || !toolbarRef.current) {
@@ -106,16 +113,34 @@ const FloatingDrawingToolbar = ({
         setColor(event.target.value);
     };
 
-    const handleSave = () => {
-        const nextStyle = { color };
+    const handleWidthChange = (event) => {
+        const parsedWidth = Number.parseInt(event.target.value, 10);
+        if (Number.isNaN(parsedWidth)) {
+            return;
+        }
+        setWidth(Math.max(1, Math.min(12, parsedWidth)));
+    };
 
-        if (color !== selectedDrawingColor) {
+    const handleSave = async () => {
+        const nextStyle = {
+            color,
+            width: Number(width),
+        };
+
+        const hasColorChanged = color !== selectedDrawingColor;
+        const hasWidthChanged = Number(width) !== Number(selectedDrawingWidth);
+
+        if (hasColorChanged || hasWidthChanged) {
             onStyleChange?.(nextStyle);
         }
 
-        window.requestAnimationFrame(() => {
-            onSave?.(nextStyle);
-        });
+        try {
+            setErrorMessage('');
+            await onSave?.(nextStyle);
+        } catch (error) {
+            console.error('Failed to save drawing style:', error);
+            setErrorMessage(error?.message || 'Unable to save drawing style.');
+        }
     };
 
     return (
@@ -140,6 +165,27 @@ const FloatingDrawingToolbar = ({
 
                     <div className="h-8 w-px bg-slate-700" />
                 </>
+            )}
+
+            {supports.width && (
+                <div className="flex items-center gap-2 min-w-[120px]">
+                    <label htmlFor="toolbar-width-range" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Width</label>
+                    <input
+                        id="toolbar-width-range"
+                        type="range"
+                        min="1"
+                        max="12"
+                        step="1"
+                        value={width}
+                        onChange={handleWidthChange}
+                        className="w-24 accent-sky-500"
+                    />
+                    <span className="text-[11px] text-slate-300 min-w-[16px] text-center">{width}</span>
+                </div>
+            )}
+
+            {errorMessage && (
+                <div className="text-[11px] text-rose-400">{errorMessage}</div>
             )}
 
             <button
