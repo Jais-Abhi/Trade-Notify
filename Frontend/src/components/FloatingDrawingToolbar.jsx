@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import resolveRenderableTime from '../utils/resolveRenderableTime';
+import { getToolRenderer } from '../utils/drawingRegistry';
 
 const FloatingDrawingToolbar = ({
     selectedDrawing,
@@ -7,6 +8,7 @@ const FloatingDrawingToolbar = ({
     series,
     chartContainerRef,
     candles = [],
+    interval,
     toolDefinition,
     onStyleChange,
     onSave,
@@ -16,6 +18,10 @@ const FloatingDrawingToolbar = ({
 }) => {
     const toolbarRef = useRef(null);
     const supports = toolDefinition?.supports || {};
+    const renderer = getToolRenderer(selectedDrawing?.tool);
+    const metadataEntries = renderer.getMetadata?.(selectedDrawing, {
+        interval: selectedDrawing?.createdInterval || interval,
+    }) || [];
     const selectedDrawingColor = selectedDrawing?.style?.color || '#3b82f6';
     const selectedDrawingWidth = selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? 2;
     const [color, setColor] = useState(selectedDrawingColor);
@@ -146,62 +152,78 @@ const FloatingDrawingToolbar = ({
     return (
         <div
             ref={toolbarRef}
-            className="absolute z-50 flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl shadow-slate-950/40 backdrop-blur-xl text-slate-100 pointer-events-auto transition-all"
-            style={{ transform: 'translate(-50%, -100%)', minWidth: '240px', display: 'none' }}
+            className="absolute z-50 flex flex-col gap-3 px-3 py-2 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl shadow-slate-950/40 backdrop-blur-xl text-slate-100 pointer-events-auto transition-all"
+            style={{ transform: 'translate(-50%, -100%)', minWidth: '280px', display: 'none' }}
             onMouseDown={(e) => e.stopPropagation()}
         >
-            {supports.color && (
-                <>
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
+            <div className="flex flex-wrap items-center gap-2">
+                {supports.color && (
+                    <>
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
+                            <input
+                                id="toolbar-color-picker"
+                                type="color"
+                                value={color}
+                                onChange={handleColorChange}
+                                className="w-10 h-10 p-0 border-0 rounded-lg cursor-pointer"
+                            />
+                        </div>
+
+                        <div className="h-8 w-px bg-slate-700" />
+                    </>
+                )}
+
+                {supports.width && (
+                    <div className="flex items-center gap-2 min-w-[120px]">
+                        <label htmlFor="toolbar-width-range" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Width</label>
                         <input
-                            id="toolbar-color-picker"
-                            type="color"
-                            value={color}
-                            onChange={handleColorChange}
-                            className="w-10 h-10 p-0 border-0 rounded-lg cursor-pointer"
+                            id="toolbar-width-range"
+                            type="range"
+                            min="1"
+                            max="12"
+                            step="1"
+                            value={width}
+                            onChange={handleWidthChange}
+                            className="w-24 accent-sky-500"
                         />
+                        <span className="text-[11px] text-slate-300 min-w-[16px] text-center">{width}</span>
                     </div>
+                )}
 
-                    <div className="h-8 w-px bg-slate-700" />
-                </>
-            )}
+                <button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {isSaving ? 'Saving...' : 'Save'}
+                </button>
 
-            {supports.width && (
-                <div className="flex items-center gap-2 min-w-[120px]">
-                    <label htmlFor="toolbar-width-range" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Width</label>
-                    <input
-                        id="toolbar-width-range"
-                        type="range"
-                        min="1"
-                        max="12"
-                        step="1"
-                        value={width}
-                        onChange={handleWidthChange}
-                        className="w-24 accent-sky-500"
-                    />
-                    <span className="text-[11px] text-slate-300 min-w-[16px] text-center">{width}</span>
+                <button
+                    onClick={onDelete}
+                    className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-rose-600 hover:bg-rose-500"
+                >
+                    Delete
+                </button>
+            </div>
+
+            {metadataEntries.length > 0 && (
+                <div className="rounded-xl border border-slate-800 bg-slate-950/70 p-2.5">
+                    <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500 mb-2">Details</div>
+                    <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px] text-slate-300">
+                        {metadataEntries.map((entry) => (
+                            <React.Fragment key={`${entry.label}-${entry.value}`}>
+                                <span className="text-slate-500">{entry.label}</span>
+                                <span className="font-medium text-slate-200 break-words">{entry.value}</span>
+                            </React.Fragment>
+                        ))}
+                    </div>
                 </div>
             )}
 
             {errorMessage && (
                 <div className="text-[11px] text-rose-400">{errorMessage}</div>
             )}
-
-            <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                {isSaving ? 'Saving...' : 'Save'}
-            </button>
-
-            <button
-                onClick={onDelete}
-                className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-rose-600 hover:bg-rose-500"
-            >
-                Delete
-            </button>
         </div>
     );
 };

@@ -87,3 +87,88 @@ export const getLineDrawingMetrics = ({ drawing, chart, series, candles = [] }) 
 };
 
 export const getTrendLineMetrics = (args) => getLineDrawingMetrics(args);
+
+export const formatPriceValue = (value) => {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '-';
+    }
+
+    return new Intl.NumberFormat(undefined, {
+        maximumFractionDigits: 4,
+        minimumFractionDigits: 0,
+    }).format(value);
+};
+
+export const formatTimeValue = (value) => {
+    if (typeof value !== 'number' || Number.isNaN(value)) {
+        return '-';
+    }
+
+    const timestamp = value > 1e12 ? value : value * 1000;
+    const date = new Date(timestamp);
+
+    if (Number.isNaN(date.getTime())) {
+        return '-';
+    }
+
+    return date.toLocaleString(undefined, {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    });
+};
+
+const extractPoint = (drawing, index) => {
+    const points = Array.isArray(drawing?.points) ? drawing.points : [];
+    if (points[index]) {
+        return points[index];
+    }
+
+    if (index === 0) {
+        return drawing?.start || drawing?.startPoint || null;
+    }
+
+    return drawing?.end || drawing?.endPoint || null;
+};
+
+export const getDrawingMetadataEntries = (drawing = {}, { interval } = {}) => {
+    const entries = [];
+    const startPoint = extractPoint(drawing, 0);
+    const endPoint = extractPoint(drawing, 1);
+
+    if (startPoint?.price != null) {
+        entries.push({
+            label: 'Start Price',
+            value: formatPriceValue(startPoint.price),
+        });
+    }
+
+    if (endPoint?.price != null) {
+        entries.push({
+            label: 'End Price',
+            value: formatPriceValue(endPoint.price),
+        });
+    }
+
+    if (startPoint?.time != null) {
+        entries.push({
+            label: 'Start Time',
+            value: formatTimeValue(startPoint.time),
+        });
+    }
+
+    if (endPoint?.time != null) {
+        entries.push({
+            label: 'End Time',
+            value: formatTimeValue(endPoint.time),
+        });
+    }
+
+    if (interval) {
+        entries.push({
+            label: 'Interval',
+            value: interval,
+        });
+    }
+
+    return entries;
+};
