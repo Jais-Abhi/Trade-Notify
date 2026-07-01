@@ -94,12 +94,17 @@ const DrawingLayer = ({
                     x: resolvedStartTime == null ? null : chart.timeScale().timeToCoordinate(resolvedStartTime),
                     y: series.priceToCoordinate(startPoint.price)
                 };
+                const previewStyle = getDrawingVisualStyle({ style: activeToolConfig?.style }, false, activeToolConfig);
                 
                 if (p1.x !== null && p1.y !== null) {
                     previewLineRef.current.setAttribute('x1', p1.x);
                     previewLineRef.current.setAttribute('y1', p1.y);
                     previewLineRef.current.setAttribute('x2', mousePosRef.current.x);
                     previewLineRef.current.setAttribute('y2', mousePosRef.current.y);
+                    previewLineRef.current.setAttribute('stroke', previewStyle.color);
+                    previewLineRef.current.setAttribute('stroke-width', previewStyle.width);
+                    previewLineRef.current.setAttribute('stroke-dasharray', previewStyle.dasharray);
+                    previewLineRef.current.setAttribute('opacity', previewStyle.opacity);
                     previewLineRef.current.setAttribute('display', 'block');
                 } else {
                     previewLineRef.current.setAttribute('display', 'none');
@@ -399,9 +404,9 @@ const DrawingLayer = ({
             {/* Preview Line (Only shown during active drawing) */}
             <line
                 ref={previewLineRef}
-                stroke={activeToolConfig?.style?.color}
+                stroke={activeToolConfig?.style?.color || '#3b82f6'}
                 strokeWidth={activeToolConfig?.style?.width || 1.5}
-                strokeDasharray={activeToolConfig?.style?.lineStyle === 'dashed' ? '6, 4' : '4, 4'}
+                strokeDasharray="0"
                 opacity="0.6"
                 display="none"
             />

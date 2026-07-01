@@ -25,7 +25,7 @@ const DrawingRenderer = ({
     }
 
     return (
-        <g key={drawing.id} data-line-id={drawing.id} display="block">
+        <>
             <line
                 stroke="transparent"
                 strokeWidth="12"
@@ -74,7 +74,7 @@ const DrawingRenderer = ({
                 cx={renderData.end.x}
                 cy={renderData.end.y}
             />
-        </g>
+        </>
     );
 };
 

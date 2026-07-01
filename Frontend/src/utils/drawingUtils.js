@@ -22,7 +22,7 @@ export const mergeDrawingStyle = (baseStyle = {}, overrideStyle = {}) => ({
 });
 
 export const getStrokeDasharray = (lineStyle = 'solid') => (
-    lineStyle === 'dashed' ? '6, 4' : '4, 4'
+    lineStyle === 'dashed' ? '6, 4' : '0'
 );
 
 export const getDrawingVisualStyle = (drawing = {}, isSelected = false, toolConfig = {}) => {
