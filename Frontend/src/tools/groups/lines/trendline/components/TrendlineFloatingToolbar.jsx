@@ -1,10 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
-import resolveRenderableTime from '../utils/resolveRenderableTime';
-import { getDrawingMetadata } from '../utils/drawingMetadata';
-import { DEFAULT_DRAWING_STYLE } from '../utils/drawingUtils';
-import { getToolImplementation } from '../tools/registry/registry';
+import resolveRenderableTime from '../../../../../utils/resolveRenderableTime';
+import { getDrawingMetadata } from '../../../../../utils/drawingMetadata';
+import { DEFAULT_DRAWING_STYLE } from '../../../../../utils/drawingUtils';
 
-const FloatingDrawingToolbar = ({
+const TrendlineFloatingToolbar = ({
     selectedDrawing,
     chart,
     series,
@@ -18,8 +17,6 @@ const FloatingDrawingToolbar = ({
     onClose
 }) => {
     const toolbarRef = useRef(null);
-    const impl = toolDefinition ? getToolImplementation(toolDefinition.tool) : null;
-    const toolUI = impl?.FloatingToolbar || impl?.UI?.FloatingToolbar || null;
     const supports = toolDefinition?.supports || {};
     const selectedDrawingColor = selectedDrawing?.style?.color ?? toolDefinition?.style?.color ?? DEFAULT_DRAWING_STYLE.color;
     const selectedDrawingWidth = selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? DEFAULT_DRAWING_STYLE.width;
@@ -29,18 +26,11 @@ const FloatingDrawingToolbar = ({
     const [showDetails, setShowDetails] = useState(false);
     const metadataRows = getDrawingMetadata({ drawing: selectedDrawing, chart, series, candles, toolDefinition });
 
-    useEffect(() => {
-        setColor(selectedDrawingColor);
-    }, [selectedDrawingColor]);
+    useEffect(() => setColor(selectedDrawingColor), [selectedDrawingColor]);
+    useEffect(() => setWidth(selectedDrawingWidth), [selectedDrawingWidth]);
 
     useEffect(() => {
-        setWidth(selectedDrawingWidth);
-    }, [selectedDrawingWidth]);
-
-    useEffect(() => {
-        if (!selectedDrawing || !chart || !series || !chartContainerRef?.current || !toolbarRef.current) {
-            return;
-        }
+        if (!selectedDrawing || !chart || !series || !chartContainerRef?.current || !toolbarRef.current) return;
 
         let rafId;
         const updatePosition = () => {
@@ -65,16 +55,7 @@ const FloatingDrawingToolbar = ({
                 y: series.priceToCoordinate(selectedDrawing.end.price)
             };
 
-            if (
-                typeof startCoord.x !== 'number' ||
-                typeof startCoord.y !== 'number' ||
-                typeof endCoord.x !== 'number' ||
-                typeof endCoord.y !== 'number' ||
-                Number.isNaN(startCoord.x) ||
-                Number.isNaN(startCoord.y) ||
-                Number.isNaN(endCoord.x) ||
-                Number.isNaN(endCoord.y)
-            ) {
+            if ([startCoord.x, startCoord.y, endCoord.x, endCoord.y].some((v) => typeof v !== 'number' || Number.isNaN(v))) {
                 toolbarRef.current.style.display = 'none';
                 rafId = requestAnimationFrame(updatePosition);
                 return;
@@ -105,9 +86,7 @@ const FloatingDrawingToolbar = ({
             const isClickInsideChart = chartRoot?.contains(event.target);
             const isClickOnDrawing = event.target.closest('[data-line-body-id], [data-handle]');
 
-            if (isClickInsideChart && isClickOnDrawing) {
-                return;
-            }
+            if (isClickInsideChart && isClickOnDrawing) return;
 
             onClose?.();
         };
@@ -118,50 +97,19 @@ const FloatingDrawingToolbar = ({
 
     if (!selectedDrawing) return null;
 
-    // Delegate to tool-specific floating toolbar when available
-    if (toolUI) {
-        const ToolUI = toolUI;
-        return (
-            <ToolUI
-                selectedDrawing={selectedDrawing}
-                chart={chart}
-                series={series}
-                chartContainerRef={chartContainerRef}
-                candles={candles}
-                toolDefinition={toolDefinition}
-                onStyleChange={onStyleChange}
-                onSave={onSave}
-                onDelete={onDelete}
-                isSaving={isSaving}
-                onClose={onClose}
-            />
-        );
-    }
-
-    const handleColorChange = (event) => {
-        setColor(event.target.value);
-    };
-
+    const handleColorChange = (event) => setColor(event.target.value);
     const handleWidthChange = (event) => {
         const parsedWidth = Number.parseInt(event.target.value, 10);
-        if (Number.isNaN(parsedWidth)) {
-            return;
-        }
+        if (Number.isNaN(parsedWidth)) return;
         setWidth(Math.max(1, Math.min(12, parsedWidth)));
     };
 
     const handleSave = async () => {
-        const nextStyle = {
-            color,
-            width: Number(width),
-        };
+        const nextStyle = { color, width: Number(width) };
+        const hasColorChanged = color !== selectedDrawing?.style?.color ?? toolDefinition?.style?.color ?? DEFAULT_DRAWING_STYLE.color;
+        const hasWidthChanged = Number(width) !== Number(selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? DEFAULT_DRAWING_STYLE.width);
 
-        const hasColorChanged = color !== selectedDrawingColor;
-        const hasWidthChanged = Number(width) !== Number(selectedDrawingWidth);
-
-        if (hasColorChanged || hasWidthChanged) {
-            onStyleChange?.(nextStyle);
-        }
+        if (hasColorChanged || hasWidthChanged) onStyleChange?.(nextStyle);
 
         try {
             setErrorMessage('');
@@ -183,40 +131,21 @@ const FloatingDrawingToolbar = ({
                 {supports.color && (
                     <div className="flex items-center gap-2">
                         <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
-                        <input
-                            id="toolbar-color-picker"
-                            type="color"
-                            value={color}
-                            onChange={handleColorChange}
-                            className="w-9 h-9 p-0 border-0 rounded-lg cursor-pointer"
-                        />
+                        <input id="toolbar-color-picker" type="color" value={color} onChange={handleColorChange} className="w-9 h-9 p-0 border-0 rounded-lg cursor-pointer" />
                     </div>
                 )}
 
                 {supports.width && (
                     <div className="flex items-center gap-2 min-w-[140px]">
                         <label htmlFor="toolbar-width-range" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Width</label>
-                        <input
-                            id="toolbar-width-range"
-                            type="range"
-                            min="1"
-                            max="12"
-                            step="1"
-                            value={width}
-                            onChange={handleWidthChange}
-                            className="w-24 accent-sky-500"
-                        />
+                        <input id="toolbar-width-range" type="range" min="1" max="12" step="1" value={width} onChange={handleWidthChange} className="w-24 accent-sky-500" />
                         <span className="text-[11px] text-slate-300 min-w-[16px] text-center">{width}</span>
                     </div>
                 )}
             </div>
 
             <div className="flex items-center justify-end">
-                <button
-                    type="button"
-                    onClick={() => setShowDetails((prev) => !prev)}
-                    className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-200"
-                >
+                <button type="button" onClick={() => setShowDetails((prev) => !prev)} className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-200">
                     {showDetails ? 'Hide Details' : 'Show Details'}
                 </button>
             </div>
@@ -235,23 +164,14 @@ const FloatingDrawingToolbar = ({
                 </div>
             )}
 
-            {errorMessage && (
-                <div className="text-[11px] text-rose-400">{errorMessage}</div>
-            )}
+            {errorMessage && <div className="text-[11px] text-rose-400">{errorMessage}</div>}
 
             <div className="flex items-center justify-end gap-2">
-                <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                <button onClick={handleSave} disabled={isSaving} className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed">
                     {isSaving ? 'Saving...' : 'Save'}
                 </button>
 
-                <button
-                    onClick={onDelete}
-                    className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-rose-600 hover:bg-rose-500"
-                >
+                <button onClick={onDelete} className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-rose-600 hover:bg-rose-500">
                     Delete
                 </button>
             </div>
@@ -259,4 +179,4 @@ const FloatingDrawingToolbar = ({
     );
 };
 
-export default FloatingDrawingToolbar;
+export default TrendlineFloatingToolbar;

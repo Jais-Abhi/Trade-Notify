@@ -231,6 +231,7 @@ const ChartContainer = ({
                 activeTool={activeTool} 
                 setActiveTool={setActiveTool} 
                 tools={tools}
+                toolbarGroups={null}
                 onClearAll={() => updateDrawingLinesWithHistory([])}
             />
             

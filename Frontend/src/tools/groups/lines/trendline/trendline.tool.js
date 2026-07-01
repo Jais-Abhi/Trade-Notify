@@ -1,4 +1,16 @@
 import { getTrendLineMetrics } from './trendline.metrics.js';
+import TrendlineFloatingToolbar from './components/TrendlineFloatingToolbar.jsx';
+
+export const META = {
+    tool: 'trendline',
+    displayName: 'Trend Line',
+    group: 'lines',
+    icon: 'trendline',
+    supports: {
+        color: true,
+        width: true,
+    },
+};
 
 const render = (drawing, state) => {
     const metrics = getTrendLineMetrics({ drawing, ...state });
@@ -6,6 +18,10 @@ const render = (drawing, state) => {
         ...metrics,
         type: 'trendline',
     };
+};
+
+export const UI = {
+    FloatingToolbar: TrendlineFloatingToolbar,
 };
 
 const hitTest = (drawing, point, state) => {
@@ -26,6 +42,8 @@ const hitTest = (drawing, point, state) => {
 };
 
 export default {
+    META,
     render,
     hitTest,
+    FloatingToolbar: TrendlineFloatingToolbar,
 };
