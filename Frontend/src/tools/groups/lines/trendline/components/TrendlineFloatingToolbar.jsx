@@ -106,8 +106,8 @@ const TrendlineFloatingToolbar = ({
 
     const handleSave = async () => {
         const nextStyle = { color, width: Number(width) };
-        const hasColorChanged = color !== selectedDrawing?.style?.color ?? toolDefinition?.style?.color ?? DEFAULT_DRAWING_STYLE.color;
-        const hasWidthChanged = Number(width) !== Number(selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? DEFAULT_DRAWING_STYLE.width);
+        const hasColorChanged = color !== selectedDrawingColor;
+        const hasWidthChanged = Number(width) !== selectedDrawingWidth;
 
         if (hasColorChanged || hasWidthChanged) onStyleChange?.(nextStyle);
 

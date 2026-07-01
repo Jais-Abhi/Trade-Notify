@@ -136,11 +136,14 @@ const DrawingLayer = ({
                     const c1 = g.querySelector('.c1');
                     const c2 = g.querySelector('.c2');
 
-                    if (renderData.visible) {
+                            if (renderData.visible) {
                         g.setAttribute('display', 'block');
                         if (toolImpl.Renderer) {
-                            // tool-specific renderer handles its own DOM output
-                        } else if (renderData.start && renderData.end) {
+                            toolImpl.updateDom?.(g, renderData, getDrawingVisualStyle(lineData, lineData.id === selectedDrawingId, activeToolConfig));
+                            return;
+                        }
+
+                        if (renderData.start && renderData.end) {
                             if (hitLine) {
                                 hitLine.setAttribute('x1', renderData.start.x);
                                 hitLine.setAttribute('y1', renderData.start.y);
@@ -253,6 +256,7 @@ const DrawingLayer = ({
             
             if (!isDrawing) {
                 setStartPoint({ time: pos.time, price: pos.price });
+                setPreviewPoint(null);
                 setIsDrawing(true);
             } else {
                 const newLine = createDrawing({
@@ -265,6 +269,7 @@ const DrawingLayer = ({
                 updateDrawingLinesWithHistory(prev => [...prev, newLine]);
                 setIsDrawing(false);
                 setStartPoint(null);
+                setPreviewPoint(null);
             }
         };
 
@@ -400,7 +405,7 @@ const DrawingLayer = ({
                 {lines.map((line) => {
                     const isSelected = line.id === selectedDrawingId;
                     return (
-                        <g key={line.id} data-line-id={line.id} display="none">
+                        <g key={line.id} data-line-id={line.id} data-tool={line.tool} display="none">
                             <DrawingRenderer
                                 drawing={line}
                                 isSelected={isSelected}
