@@ -36,6 +36,7 @@ export const getDrawingVisualStyle = (drawing = {}, isSelected = false, toolConf
         lineStyle: baseStyle.lineStyle || 'solid',
         dasharray: getStrokeDasharray(baseStyle.lineStyle),
         opacity: isSelected ? 1 : (baseStyle.opacity ?? 0.75),
+        fillOpacity: baseStyle.fillOpacity ?? DEFAULT_DRAWING_STYLE.fillOpacity,
     };
 };
 
@@ -83,6 +84,31 @@ export const getLineDrawingMetrics = ({ drawing, chart, series, candles = [] }) 
         visible: start.x !== null && start.y !== null && end.x !== null && end.y !== null,
         start,
         end,
+    };
+};
+
+export const getPriceRangeMetrics = ({ drawing, chart, series, candles = [] }) => {
+    const baseMetrics = getLineDrawingMetrics({ drawing, chart, series, candles });
+    if (!baseMetrics.visible || !baseMetrics.start || !baseMetrics.end) {
+        return {
+            visible: false,
+            start: null,
+            end: null,
+            bounds: null,
+        };
+    }
+
+    const x = Math.min(baseMetrics.start.x, baseMetrics.end.x);
+    const y = Math.min(baseMetrics.start.y, baseMetrics.end.y);
+    const width = Math.abs(baseMetrics.end.x - baseMetrics.start.x);
+    const height = Math.abs(baseMetrics.end.y - baseMetrics.start.y);
+    const visible = width > 0 && height > 0;
+
+    return {
+        visible,
+        start: baseMetrics.start,
+        end: baseMetrics.end,
+        bounds: visible ? { x, y, width, height } : null,
     };
 };
 

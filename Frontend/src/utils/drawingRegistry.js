@@ -1,4 +1,4 @@
-import { getTrendLineMetrics } from './drawingUtils';
+import { getTrendLineMetrics, getPriceRangeMetrics } from './drawingUtils';
 
 const TOOL_RENDERERS = {
     trendline: {
@@ -24,6 +24,22 @@ const TOOL_RENDERERS = {
             const nearestY = metrics.start.y + clamped * dy;
             const dist = Math.hypot(point.x - nearestX, point.y - nearestY);
             return dist <= 8;
+        },
+    },
+    pricerange: {
+        render: (drawing, state) => {
+            const metrics = getPriceRangeMetrics({ drawing, ...state });
+            return {
+                ...metrics,
+                type: 'pricerange',
+            };
+        },
+        hitTest: (drawing, point, state) => {
+            const metrics = getPriceRangeMetrics({ drawing, ...state });
+            if (!metrics.visible || !metrics.bounds) return false;
+
+            const { x, y, width, height } = metrics.bounds;
+            return point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height;
         },
     },
 };
