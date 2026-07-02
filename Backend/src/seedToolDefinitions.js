@@ -61,7 +61,40 @@ const seedToolDefinitions = async () => {
                     opacity: true,
                     fillOpacity: true
                 }
-            }
+            },
+            {
+    tool: 'longposition',
+    displayName: 'Long Position',
+    category: 'Forecasting',
+    icon: 'long-position',
+    order: 3,
+    enabled: true,
+    style: {
+        profitColor: '#22c55e',
+        lossColor: '#ef4444',
+        entryColor: '#3b82f6',
+        borderColor: '#9ca3af',
+        width: 2,
+        lineStyle: 'solid',
+        fillOpacity: 0.25
+    },
+    options: {
+        defaultRiskReward: 1,
+        defaultWidth: 80,
+        showLabels: true,
+        lockRiskReward: false
+    },
+    supports: {
+        profitColor: true,
+        lossColor: true,
+        entryColor: true,
+        borderColor: true,
+        width: true,
+        lineStyle: true,
+        fillOpacity: true,
+        labels: true
+    }
+}
         ];
 
         for (const toolDefinition of toolDefinitions) {
