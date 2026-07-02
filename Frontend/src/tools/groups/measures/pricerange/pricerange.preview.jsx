@@ -1,13 +1,15 @@
 import React from 'react';
 import { getPriceRangePreviewMetrics } from './pricerange.metrics.js';
+import { DEFAULT_DRAWING_STYLE } from '../../../../utils/drawingUtils';
 
 const PriceRangePreview = ({ startPoint, currentPoint, chart, series, candles, style = {} }) => {
     const metrics = getPriceRangePreviewMetrics({ startPoint, currentPoint, chart, series, candles });
     if (!metrics.visible) return null;
 
-    const fillColor = style.color || '#22c55e';
-    const strokeColor = style.color || '#22c55e';
-    const fillOpacity = style.fillOpacity ?? 0.16;
+    const fillColor = style.color ?? DEFAULT_DRAWING_STYLE.color;
+    const strokeColor = style.color ?? DEFAULT_DRAWING_STYLE.color;
+    const fillOpacity = style.fillOpacity ?? DEFAULT_DRAWING_STYLE.fillOpacity;
+    const lineWidth = style.selectedWidth ?? style.width ?? DEFAULT_DRAWING_STYLE.width;
     const arrowX = metrics.centerX;
     const arrowY1 = metrics.top + (metrics.height * 0.35);
     const arrowY2 = metrics.bottom - (metrics.height * 0.35);

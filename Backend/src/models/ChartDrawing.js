@@ -20,6 +20,10 @@ const styleSchema = new mongoose.Schema({
     },
     lineStyle: {
         type: String,
+    },
+    fillOpacity: {
+        type: Number,
+        default: 0.16,
     }
 }, { _id: false });
 

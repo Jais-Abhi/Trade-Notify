@@ -1,5 +1,6 @@
 import { getPriceRangeMetrics } from './pricerange.metrics.js';
 import PriceRangeRenderer from './pricerange.renderer.jsx';
+import { DEFAULT_DRAWING_STYLE } from '../../../../utils/drawingUtils';
 
 export const META = {
     tool: 'pricerange',
@@ -41,9 +42,10 @@ const updateDom = (groupElement, metrics, style) => {
 
     const rect = groupElement.querySelector('rect');
     const lines = Array.from(groupElement.querySelectorAll('line'));
-    const fillColor = style.color || '#22c55e';
-    const strokeColor = style.color || '#22c55e';
-    const opacity = style.opacity ?? 0.18;
+    const fillColor = style.color ?? DEFAULT_DRAWING_STYLE.color;
+    const strokeColor = style.color ?? DEFAULT_DRAWING_STYLE.color;
+    const fillOpacity = style.fillOpacity ?? DEFAULT_DRAWING_STYLE.fillOpacity;
+    const lineWidth = style.selectedWidth ?? style.width ?? DEFAULT_DRAWING_STYLE.width;
     const arrowHeadSize = 7;
     const isUp = metrics.direction === 'up';
 
@@ -53,7 +55,7 @@ const updateDom = (groupElement, metrics, style) => {
         rect.setAttribute('width', metrics.width);
         rect.setAttribute('height', metrics.height);
         rect.setAttribute('fill', fillColor);
-        rect.setAttribute('opacity', opacity);
+        rect.setAttribute('opacity', fillOpacity);
     }
 
     if (lines.length < 5) return;
@@ -103,7 +105,7 @@ const updateDom = (groupElement, metrics, style) => {
     }
 
     lines.slice(0, 5).forEach(line => {
-        line.setAttribute('stroke-width', 2);
+        line.setAttribute('stroke-width', lineWidth);
         line.setAttribute('stroke-linecap', 'round');
         line.setAttribute('pointer-events', 'none');
     });

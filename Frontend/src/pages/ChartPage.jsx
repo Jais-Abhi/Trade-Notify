@@ -130,6 +130,7 @@ const ChartPage = () => {
                 color: line.style?.color ?? defaultTool?.style?.color ?? DEFAULT_DRAWING_STYLE.color,
                 width: line.style?.width ?? defaultTool?.style?.width ?? DEFAULT_DRAWING_STYLE.width,
                 lineStyle: line.style?.lineStyle ?? defaultTool?.style?.lineStyle ?? DEFAULT_DRAWING_STYLE.lineStyle,
+                fillOpacity: line.style?.fillOpacity ?? defaultTool?.style?.fillOpacity ?? DEFAULT_DRAWING_STYLE.fillOpacity,
             },
             options: line.options || defaultTool?.options || {},
             locked: false,
@@ -196,6 +197,7 @@ const ChartPage = () => {
         const selectedDrawing = drawingLines.find((line) => line.id === selectedDrawingId);
         if (!selectedDrawing) return;
 
+        const defaultTool = resolveDefaultTool(selectedDrawing.tool);
         const nextStyle = {
             ...(selectedDrawing.style || {}),
             ...styleOverride
@@ -223,8 +225,10 @@ const ChartPage = () => {
                     toolId,
                     payload: {
                         style: {
-                            color: nextStyle.color,
-                            width: nextStyle.width,
+                            color: nextStyle.color ?? defaultTool?.style?.color ?? DEFAULT_DRAWING_STYLE.color,
+                            width: nextStyle.width ?? defaultTool?.style?.width ?? DEFAULT_DRAWING_STYLE.width,
+                            lineStyle: nextStyle.lineStyle ?? defaultTool?.style?.lineStyle ?? DEFAULT_DRAWING_STYLE.lineStyle,
+                            fillOpacity: nextStyle.fillOpacity ?? defaultTool?.style?.fillOpacity ?? DEFAULT_DRAWING_STYLE.fillOpacity,
                         },
                     },
                 })).unwrap();

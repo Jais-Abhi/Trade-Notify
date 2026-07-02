@@ -36,6 +36,7 @@ export const getDrawingVisualStyle = (drawing = {}, isSelected = false, toolConf
         lineStyle: baseStyle.lineStyle || 'solid',
         dasharray: getStrokeDasharray(baseStyle.lineStyle),
         opacity: isSelected ? 1 : (baseStyle.opacity ?? 0.75),
+        fillOpacity: baseStyle.fillOpacity ?? DEFAULT_DRAWING_STYLE.fillOpacity,
     };
 };
 
