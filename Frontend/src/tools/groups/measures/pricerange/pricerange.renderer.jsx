@@ -33,7 +33,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                 x2={metrics.right}
                 y2={metrics.top}
                 stroke={strokeColor}
-                strokeWidth={2}
+                strokeWidth={lineWidth}
                 strokeLinecap="round"
                 pointerEvents="none"
             />
@@ -43,7 +43,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                 x2={metrics.right}
                 y2={metrics.bottom}
                 stroke={strokeColor}
-                strokeWidth={2}
+                strokeWidth={lineWidth}
                 strokeLinecap="round"
                 pointerEvents="none"
             />
@@ -53,7 +53,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                 x2={arrowX}
                 y2={arrowY2}
                 stroke={strokeColor}
-                strokeWidth={2}
+                strokeWidth={lineWidth}
                 strokeLinecap="round"
                 pointerEvents="none"
             />
@@ -65,7 +65,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                         x2={arrowX - arrowHeadSize}
                         y2={arrowY1 + arrowHeadSize}
                         stroke={strokeColor}
-                        strokeWidth={2}
+                        strokeWidth={lineWidth}
                         strokeLinecap="round"
                         pointerEvents="none"
                     />
@@ -75,7 +75,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                         x2={arrowX + arrowHeadSize}
                         y2={arrowY1 + arrowHeadSize}
                         stroke={strokeColor}
-                        strokeWidth={2}
+                        strokeWidth={lineWidth}
                         strokeLinecap="round"
                         pointerEvents="none"
                     />
@@ -88,7 +88,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                         x2={arrowX - arrowHeadSize}
                         y2={arrowY2 - arrowHeadSize}
                         stroke={strokeColor}
-                        strokeWidth={2}
+                        strokeWidth={lineWidth}
                         strokeLinecap="round"
                         pointerEvents="none"
                     />
@@ -98,7 +98,7 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                         x2={arrowX + arrowHeadSize}
                         y2={arrowY2 - arrowHeadSize}
                         stroke={strokeColor}
-                        strokeWidth={2}
+                        strokeWidth={lineWidth}
                         strokeLinecap="round"
                         pointerEvents="none"
                     />
