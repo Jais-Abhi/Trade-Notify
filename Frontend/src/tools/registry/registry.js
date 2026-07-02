@@ -31,6 +31,11 @@ export const getRegistryMetadata = () => {
             title: 'Measures',
             tools: [pricerange.META],
         },
+        forecasting: {
+            key: 'forecasting',
+            title: 'Forecasting',
+            tools: [longposition.META],
+        },
     };
 
     return Object.values(groups);
