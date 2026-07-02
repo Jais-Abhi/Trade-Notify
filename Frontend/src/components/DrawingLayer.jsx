@@ -290,6 +290,9 @@ const DrawingLayer = ({
 
             if (!dragStateRef.current) return;
 
+            e.preventDefault();
+            e.stopPropagation();
+
             const dx = e.clientX - dragStateRef.current.startMouseX;
             const dy = e.clientY - dragStateRef.current.startMouseY;
             const lineId = dragStateRef.current.lineId;
@@ -346,8 +349,10 @@ const DrawingLayer = ({
             }
         };
 
-        const onMouseUp = () => {
+        const onMouseUp = (e) => {
             if (dragStateRef.current) {
+                e.preventDefault();
+                e.stopPropagation();
                 dragStateRef.current = null;
             }
         };

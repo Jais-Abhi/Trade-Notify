@@ -28,23 +28,25 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                 pointerEvents="none"
             />
             <line
+                data-hit-line="true"
                 x1={metrics.left}
                 y1={metrics.top}
                 x2={metrics.right}
                 y2={metrics.top}
                 stroke="transparent"
                 strokeWidth={Math.max(18, lineWidth + 8)}
-                pointerEvents="stroke"
+                pointerEvents="all"
                 cursor="pointer"
             />
             <line
+                data-hit-line="true"
                 x1={metrics.left}
                 y1={metrics.bottom}
                 x2={metrics.right}
                 y2={metrics.bottom}
                 stroke="transparent"
                 strokeWidth={Math.max(18, lineWidth + 8)}
-                pointerEvents="stroke"
+                pointerEvents="all"
                 cursor="pointer"
             />
             <line
