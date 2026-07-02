@@ -1,14 +1,15 @@
 import React from 'react';
-import { DEFAULT_DRAWING_STYLE } from '../../../../utils/drawingUtils';
 
-const LongPositionRenderer = ({ metrics, style }) => {
+const LongPositionRenderer = ({ drawing, metrics, style, activeToolConfig }) => {
     if (!metrics?.visible) return null;
 
-    const profitColor = style.profitColor ?? DEFAULT_DRAWING_STYLE.color;
-    const lossColor = style.lossColor ?? '#ef4444';
-    const borderColor = style.borderColor ?? '#9ca3af';
-    const entryColor = style.entryColor ?? '#3b82f6';
-    const fillOpacity = style.fillOpacity ?? DEFAULT_DRAWING_STYLE.fillOpacity;
+    // Prefer drawing-specific styles (from backend), then tool config, then provided visual style
+    const profitColor = drawing?.style?.profitColor ?? activeToolConfig?.style?.profitColor ?? style.color;
+    const lossColor = drawing?.style?.lossColor ?? activeToolConfig?.style?.lossColor ?? style.color;
+    const borderColor = drawing?.style?.borderColor ?? activeToolConfig?.style?.borderColor ?? style.color;
+    const entryColor = drawing?.style?.entryColor ?? activeToolConfig?.style?.entryColor ?? style.color;
+    const fillOpacity = drawing?.style?.fillOpacity ?? activeToolConfig?.style?.fillOpacity ?? style.fillOpacity ?? style.opacity;
+    const lineWidth = drawing?.style?.width ?? activeToolConfig?.style?.width ?? style.width;
 
     const left = metrics.left;
     const width = Math.max(2, metrics.width);
@@ -23,7 +24,6 @@ const LongPositionRenderer = ({ metrics, style }) => {
 
     return (
         <>
-            {/* Profit rectangle (behind) */}
             <rect
                 x={left}
                 y={top}
@@ -35,7 +35,6 @@ const LongPositionRenderer = ({ metrics, style }) => {
                 pointerEvents="none"
             />
 
-            {/* Loss rectangle (behind) */}
             <rect
                 x={left}
                 y={entryY}
@@ -47,43 +46,39 @@ const LongPositionRenderer = ({ metrics, style }) => {
                 pointerEvents="none"
             />
 
-            {/* Take Profit line (top) */}
             <line
                 x1={left}
                 y1={metrics.tpY}
                 x2={left + width}
                 y2={metrics.tpY}
                 stroke={profitColor}
-                strokeWidth={style.selectedWidth ?? style.width ?? DEFAULT_DRAWING_STYLE.width}
+                strokeWidth={style.selectedWidth ?? lineWidth}
                 strokeLinecap="round"
                 pointerEvents="none"
             />
 
-            {/* Entry line (center) */}
             <line
                 x1={left}
                 y1={entryY}
                 x2={left + width}
                 y2={entryY}
                 stroke={entryColor}
-                strokeWidth={style.selectedWidth ?? style.width ?? DEFAULT_DRAWING_STYLE.width}
+                strokeWidth={style.selectedWidth ?? lineWidth}
                 strokeLinecap="round"
                 pointerEvents="none"
             />
 
-            {/* Stop Loss line (bottom) */}
             <line
                 x1={left}
                 y1={metrics.slY}
                 x2={left + width}
                 y2={metrics.slY}
                 stroke={lossColor}
-                strokeWidth={style.selectedWidth ?? style.width ?? DEFAULT_DRAWING_STYLE.width}
+                strokeWidth={style.selectedWidth ?? lineWidth}
                 strokeLinecap="round"
                 pointerEvents="none"
             />
 
-            {/* Handles: tp, entry, sl, left, right */}
             <circle
                 data-line-id={metrics.id}
                 data-handle="tp"
@@ -118,7 +113,6 @@ const LongPositionRenderer = ({ metrics, style }) => {
                 style={{ pointerEvents: 'all', cursor: 'ns-resize', display: 'block' }}
             />
 
-            {/* left / right width handles */}
             <circle
                 data-line-id={metrics.id}
                 data-handle="left"

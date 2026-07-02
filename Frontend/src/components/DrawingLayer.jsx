@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import resolveRenderableTime from '../utils/resolveRenderableTime';
 import { getToolImplementation } from '../tools/registry/registry';
 import { createDrawing, getDrawingVisualStyle, DEFAULT_DRAWING_STYLE } from '../utils/drawingUtils';
@@ -53,15 +54,20 @@ const DrawingLayer = ({
 
     const getTool = (tool) => getToolImplementation(tool);
 
+    // All tool definitions from Redux (to obtain backend-supplied styles/options per tool)
+    const allTools = useSelector((state) => state.drawingTool.tools);
+
     const getDrawingAtPoint = (x, y) => {
         if (!chart || !series) return null;
 
         const point = { x, y };
+        // lookup tool definition for this drawing (backend-supplied)
         for (let index = lines.length - 1; index >= 0; index -= 1) {
             const drawing = lines[index];
             const toolImpl = getTool(drawing.tool);
-            const renderData = toolImpl.render(drawing, { chart, series, candles });
-            if (renderData.visible && toolImpl.hitTest?.(drawing, point, { chart, series, candles })) {
+            const toolDef = (allTools || []).find(t => t.tool === drawing.tool) || activeToolConfig || {};
+            const renderData = toolImpl.render(drawing, { chart, series, candles, activeToolConfig: toolDef });
+            if (renderData.visible && toolImpl.hitTest?.(drawing, point, { chart, series, candles, activeToolConfig: toolDef })) {
                 return drawing;
             }
         }
@@ -126,10 +132,12 @@ const DrawingLayer = ({
                     if (!lineData) return;
 
                     const toolImpl = getTool(lineData.tool);
+                    const toolDef = (allTools || []).find(t => t.tool === lineData.tool) || activeToolConfig || {};
                     const renderData = toolImpl.render(lineData, {
                         chart,
                         series,
                         candles,
+                        activeToolConfig: toolDef,
                     });
 
                     const svgLines = g.querySelectorAll('line');
@@ -141,7 +149,9 @@ const DrawingLayer = ({
                             if (renderData.visible) {
                         g.setAttribute('display', 'block');
                         if (toolImpl.Renderer) {
-                            toolImpl.updateDom?.(g, renderData, getDrawingVisualStyle(lineData, lineData.id === selectedDrawingId, activeToolConfig));
+                            const visualStyle = getDrawingVisualStyle(lineData, lineData.id === selectedDrawingId, toolDef);
+                            const mergedStyle = { ...(toolDef?.style || {}), ...visualStyle };
+                            toolImpl.updateDom?.(g, renderData, mergedStyle);
                             return;
                         }
 
@@ -153,7 +163,8 @@ const DrawingLayer = ({
                                 hitLine.setAttribute('y2', renderData.end.y);
                             }
                             if (visualLine) {
-                                const style = getDrawingVisualStyle(lineData, lineData.id === selectedDrawingId, activeToolConfig);
+                                const visualStyle = getDrawingVisualStyle(lineData, lineData.id === selectedDrawingId, toolDef);
+                                const style = { ...(toolDef?.style || {}), ...visualStyle };
                                 visualLine.setAttribute('x1', renderData.start.x);
                                 visualLine.setAttribute('y1', renderData.start.y);
                                 visualLine.setAttribute('x2', renderData.end.x);

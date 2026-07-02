@@ -7,7 +7,7 @@ const getBounds = ({ start, end }) => {
     return { left, right, width };
 };
 
-export const getLongPositionMetrics = ({ drawing, chart, series, candles = [] }) => {
+export const getLongPositionMetrics = ({ drawing, chart, series, candles = [], activeToolConfig = {} }) => {
     if (!drawing || !chart || !series) {
         return { visible: false };
     }
@@ -32,17 +32,21 @@ export const getLongPositionMetrics = ({ drawing, chart, series, candles = [] })
     const centerX = bounds.left + bounds.width / 2;
     const entryY = start.y;
 
-    // offsets in pixels (defaults)
-    const tpOffsetPx = drawing.options?.tpOffsetPx ?? drawing.options?.tpOffset ?? 40;
-    const slOffsetPx = drawing.options?.slOffsetPx ?? drawing.options?.slOffset ?? 40;
+    // offsets in pixels (prefer drawing options, then tool config options)
+    const tpOffsetPx = drawing.options?.tpOffsetPx ?? drawing.options?.tpOffset ?? activeToolConfig?.options?.tpOffsetPx ?? activeToolConfig?.options?.tpOffset;
+    const slOffsetPx = drawing.options?.slOffsetPx ?? drawing.options?.slOffset ?? activeToolConfig?.options?.slOffsetPx ?? activeToolConfig?.options?.slOffset;
+
+    // final numeric fallback if none provided
+    const finalTpOffsetPx = typeof tpOffsetPx === 'number' ? tpOffsetPx : 40;
+    const finalSlOffsetPx = typeof slOffsetPx === 'number' ? slOffsetPx : 40;
 
     // if explicit prices provided in options, prefer them
     const tpPrice = (drawing.options?.tpPrice != null)
         ? drawing.options.tpPrice
-        : series.coordinateToPrice(entryY - tpOffsetPx);
+        : series.coordinateToPrice(entryY - finalTpOffsetPx);
     const slPrice = (drawing.options?.slPrice != null)
         ? drawing.options.slPrice
-        : series.coordinateToPrice(entryY + slOffsetPx);
+        : series.coordinateToPrice(entryY + finalSlOffsetPx);
 
     const tpY = series.priceToCoordinate(tpPrice);
     const slY = series.priceToCoordinate(slPrice);

@@ -16,6 +16,7 @@ const DrawingRenderer = ({
         chart,
         series,
         candles,
+        activeToolConfig,
     };
     const renderData = impl.render(drawing, renderState);
     const style = getDrawingVisualStyle(drawing, isSelected, activeToolConfig);
@@ -25,7 +26,7 @@ const DrawingRenderer = ({
     }
 
     if (impl.Renderer) {
-        return <impl.Renderer metrics={renderData} style={style} />;
+        return <impl.Renderer drawing={drawing} metrics={renderData} style={style} activeToolConfig={activeToolConfig} />;
     }
 
     if (!renderData.start || !renderData.end) {
