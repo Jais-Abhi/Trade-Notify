@@ -32,6 +32,26 @@ const PriceRangeRenderer = ({ metrics, style }) => {
                 y1={metrics.top}
                 x2={metrics.right}
                 y2={metrics.top}
+                stroke="transparent"
+                strokeWidth={Math.max(18, lineWidth + 8)}
+                pointerEvents="stroke"
+                cursor="pointer"
+            />
+            <line
+                x1={metrics.left}
+                y1={metrics.bottom}
+                x2={metrics.right}
+                y2={metrics.bottom}
+                stroke="transparent"
+                strokeWidth={Math.max(18, lineWidth + 8)}
+                pointerEvents="stroke"
+                cursor="pointer"
+            />
+            <line
+                x1={metrics.left}
+                y1={metrics.top}
+                x2={metrics.right}
+                y2={metrics.top}
                 stroke={strokeColor}
                 strokeWidth={lineWidth}
                 strokeLinecap="round"

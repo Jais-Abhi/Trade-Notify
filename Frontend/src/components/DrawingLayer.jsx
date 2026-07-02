@@ -391,7 +391,7 @@ const DrawingLayer = ({
     return (
         <svg
             ref={svgRef}
-            className="absolute z-30 overflow-hidden pointer-events-none"
+            className="absolute z-30 overflow-hidden pointer-events-auto"
         >
             <defs>
                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -428,6 +428,7 @@ const DrawingLayer = ({
                 strokeDasharray="0"
                 opacity="0.6"
                 display="none"
+                pointerEvents="none"
             />
             {isDrawing && startPoint && previewPoint && activeTool === 'pricerange' && (
                 <g>
