@@ -49,6 +49,8 @@ const DrawingLayer = ({
         return { time, price, x, y };
     };
 
+    const clampValue = (value, min, max) => Math.min(Math.max(value, min), max);
+
     const getTool = (tool) => getToolImplementation(tool);
 
     const getDrawingAtPoint = (x, y) => {
@@ -281,6 +283,11 @@ const DrawingLayer = ({
             const y = e.clientY - rect.top;
             mousePosRef.current = { x, y };
 
+            const clampPoint = (point) => ({
+                x: clampValue(point.x, 0, rect.width),
+                y: clampValue(point.y, 0, rect.height),
+            });
+
             if (isDrawing && startPoint) {
                 const pos = pixelToCoords(x, y);
                 if (pos && pos.time !== null && pos.price !== null) {
@@ -326,13 +333,19 @@ const DrawingLayer = ({
                     }));
                 }
             } else if (dragStateRef.current.type === 'body') {
-                const newX1 = dragStateRef.current.originalStartPix.x + dx;
-                const newY1 = dragStateRef.current.originalStartPix.y + dy;
-                const newX2 = dragStateRef.current.originalEndPix.x + dx;
-                const newY2 = dragStateRef.current.originalEndPix.y + dy;
+                const rawNewStart = {
+                    x: dragStateRef.current.originalStartPix.x + dx,
+                    y: dragStateRef.current.originalStartPix.y + dy,
+                };
+                const rawNewEnd = {
+                    x: dragStateRef.current.originalEndPix.x + dx,
+                    y: dragStateRef.current.originalEndPix.y + dy,
+                };
+                const clampedStart = clampPoint(rawNewStart);
+                const clampedEnd = clampPoint(rawNewEnd);
 
-                const startPos = pixelToCoords(newX1, newY1);
-                const endPos = pixelToCoords(newX2, newY2);
+                const startPos = pixelToCoords(clampedStart.x, clampedStart.y);
+                const endPos = pixelToCoords(clampedEnd.x, clampedEnd.y);
 
                 if (startPos && endPos && startPos.time !== null && startPos.price !== null && endPos.time !== null && endPos.price !== null) {
                     setLines(prev => prev.map(l => {
@@ -396,7 +409,8 @@ const DrawingLayer = ({
     return (
         <svg
             ref={svgRef}
-            className="absolute z-30 overflow-hidden pointer-events-auto"
+            className="absolute z-30 overflow-hidden"
+            style={{ pointerEvents: 'none' }}
         >
             <defs>
                 <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
