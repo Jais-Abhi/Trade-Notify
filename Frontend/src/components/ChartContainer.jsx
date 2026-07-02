@@ -36,6 +36,7 @@ const ChartContainer = ({
 
         let chart;
         let candlestickSeries;
+        let isActive = true;
 
         const initChart = () => {
             if (!chartContainerRef.current) return;
@@ -128,6 +129,8 @@ const ChartContainer = ({
                         .filter(candle => candle && typeof candle.time === 'number')
                         .sort((a, b) => a.time - b.time);
 
+                    if (!isActive) return;
+
                     setCandles(cleanData);
 
                     if (cleanData.length === 0) {
@@ -159,6 +162,7 @@ const ChartContainer = ({
         window.addEventListener('resize', handleResize);
 
         return () => {
+            isActive = false;
             window.removeEventListener('resize', handleResize);
             if (chart) {
                 chart.remove();

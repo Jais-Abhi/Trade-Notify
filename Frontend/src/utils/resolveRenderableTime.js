@@ -15,8 +15,12 @@ const resolveRenderableTime = (drawingTime, candles = []) => {
         return null;
     }
 
-    if (normalizedDrawingTime < firstCandleTime || normalizedDrawingTime > lastCandleTime) {
-        return null;
+    if (normalizedDrawingTime <= firstCandleTime) {
+        return firstCandleTime;
+    }
+
+    if (normalizedDrawingTime >= lastCandleTime) {
+        return lastCandleTime;
     }
 
     let left = 0;
@@ -43,7 +47,19 @@ const resolveRenderableTime = (drawingTime, candles = []) => {
         }
     }
 
-    return bestMatch;
+    const nextIndex = Math.min(left, candles.length - 1);
+    const nextTime = Number(candles[nextIndex]?.time);
+    if (!Number.isFinite(bestMatch)) {
+        return nextTime;
+    }
+
+    if (!Number.isFinite(nextTime)) {
+        return bestMatch;
+    }
+
+    return Math.abs(normalizedDrawingTime - bestMatch) <= Math.abs(nextTime - normalizedDrawingTime)
+        ? bestMatch
+        : nextTime;
 };
 
 export default resolveRenderableTime;
