@@ -295,15 +295,15 @@ const DrawingLayer = ({
             if (!pos || pos.time === null || pos.price === null) return;
             
             if (!isDrawing) {
-                // Single-click create for longposition: create a default-width box centered at click
-                if (activeTool === 'longposition') {
-                    const defaultWidthPx = (activeToolConfig?.options?.defaultWidthPx) || 120;
+                // Single-click create for longposition or shortposition: create a default-width box centered at click
+                if (activeTool === 'longposition' || activeTool === 'shortposition') {
+                    const defaultWidthPx = (activeToolConfig?.options?.defaultWidthPx) || activeToolConfig?.options?.defaultWidth || 120;
                     const leftX = clampValue(x - defaultWidthPx / 2, 0, rect.width);
                     const rightX = clampValue(x + defaultWidthPx / 2, 0, rect.width);
                     const leftTime = chart.timeScale().coordinateToTime(leftX);
                     const rightTime = chart.timeScale().coordinateToTime(rightX);
                     const newLine = createDrawing({
-                        tool: 'longposition',
+                        tool: activeTool,
                         startPoint: { time: leftTime, price: pos.price },
                         endPoint: { time: rightTime, price: pos.price },
                         activeToolConfig,

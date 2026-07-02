@@ -1,12 +1,14 @@
 import trendline from '../groups/lines/trendline/trendline.tool.js';
 import pricerange from '../groups/measures/pricerange/pricerange.tool.js';
 import longposition from '../groups/forecasting/longposition/longposition.tool.js';
+import shortposition from '../groups/forecasting/shortposition/shortposition.tool.js';
 
 const IMPLEMENTATIONS = {
     trendline,
     pricerange,
     // forecasting
     longposition,
+    shortposition,
 };
 
 export const getToolImplementation = (toolId) => IMPLEMENTATIONS[toolId] || IMPLEMENTATIONS.trendline;

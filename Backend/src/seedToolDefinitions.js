@@ -94,6 +94,42 @@ const seedToolDefinitions = async () => {
         fillOpacity: true,
         labels: true
     }
+},
+{
+    tool: 'shortposition',
+    displayName: 'Short Position',
+    category: 'Forecasting',
+    icon: 'short-position',
+    order: 4,
+    enabled: true,
+    style: {
+        profitColor: '#22c55e',
+        lossColor: '#ef4444',
+        entryColor: '#3b82f6',
+        borderColor: '#9ca3af',
+        width: 2,
+        lineStyle: 'solid',
+        fillOpacity: 0.25
+    },
+    options: {
+        defaultRiskReward: 1,
+        defaultWidth: 80,
+        showLabels: true,
+        lockRiskReward: false
+    },
+    supports: {
+        profitColor: true,
+        lossColor: true,
+        entryColor: true,
+        borderColor: true,
+        width: true,
+        lineStyle: true,
+        fillOpacity: true,
+        labels: true,
+        editableRiskReward: true,
+        movable: true,
+        resizable: true
+    }
 }
         ];
 
