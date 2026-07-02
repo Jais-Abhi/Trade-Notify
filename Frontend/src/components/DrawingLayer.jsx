@@ -200,7 +200,7 @@ const DrawingLayer = ({
             const circleTarget = e.target.closest('[data-handle]');
             if (circleTarget) {
                 const lineId = circleTarget.getAttribute('data-line-id');
-                const handleIndex = circleTarget.getAttribute('data-handle'); // '1' or '2'
+                const handleName = circleTarget.getAttribute('data-handle'); // '1'|'2' or named handles like 'tp','entry','sl','left','right'
                 const line = lines.find(l => l.id.toString() === lineId);
                 if (line) {
                     const isSelected = line.id === selectedDrawingId;
@@ -212,13 +212,25 @@ const DrawingLayer = ({
                     }
 
                     // Snapshot will be pushed on first actual mouse movement, not here
+                    const dragType = (handleName === '1' || handleName === '2')
+                        ? (handleName === '1' ? 'point1' : 'point2')
+                        : handleName; // support custom handles
+
                     dragStateRef.current = {
-                        type: handleIndex === '1' ? 'point1' : 'point2',
+                        type: dragType,
                         lineId: line.id,
                         startMouseX: e.clientX,
                         startMouseY: e.clientY,
                         originalStart: { ...line.start },
                         originalEnd: { ...line.end },
+                        originalStartPix: {
+                            x: chart.timeScale().timeToCoordinate(resolveRenderableTime(line.start.time, candles)),
+                            y: series.priceToCoordinate(line.start.price)
+                        },
+                        originalEndPix: {
+                            x: chart.timeScale().timeToCoordinate(resolveRenderableTime(line.end.time, candles)),
+                            y: series.priceToCoordinate(line.end.price)
+                        },
                         snapshotLines: [...lines], // Pre-drag snapshot for history
                         hasMoved: false            // Only push history after first real move
                     };
@@ -337,6 +349,7 @@ const DrawingLayer = ({
             const dx = e.clientX - dragStateRef.current.startMouseX;
             const dy = e.clientY - dragStateRef.current.startMouseY;
             const lineId = dragStateRef.current.lineId;
+            const dragType = dragStateRef.current.type;
 
             // Push history snapshot on first actual movement (not on mere click)
             if (!dragStateRef.current.hasMoved && (Math.abs(dx) > 2 || Math.abs(dy) > 2)) {
@@ -402,6 +415,51 @@ const DrawingLayer = ({
                                 start: { time: startPos.time, price: startPos.price },
                                 end: { time: endPos.time, price: endPos.price }
                             };
+                        }
+                        return l;
+                    }));
+                }
+            } else if (dragType === 'tp' || dragType === 'sl') {
+                const clamped = clampPoint({ x, y });
+                const pos = pixelToCoords(clamped.x, clamped.y);
+                if (pos && pos.time !== null && pos.price !== null) {
+                    setLines(prev => prev.map(l => {
+                        if (l.id === lineId) {
+                            const opt = { ...(l.options || {}) };
+                            if (dragType === 'tp') {
+                                opt.tpPrice = pos.price;
+                                delete opt.tpOffsetPx;
+                            } else {
+                                opt.slPrice = pos.price;
+                                delete opt.slOffsetPx;
+                            }
+                            return { ...l, options: opt };
+                        }
+                        return l;
+                    }));
+                }
+            } else if (dragStateRef.current.type === 'entry') {
+                const clamped = clampPoint({ x, y });
+                const pos = pixelToCoords(clamped.x, clamped.y);
+                if (pos && pos.time !== null && pos.price !== null) {
+                    setLines(prev => prev.map(l => {
+                        if (l.id === lineId) {
+                            // Move entry price for both start and end (vertical move)
+                            return { ...l, start: { ...l.start, price: pos.price }, end: { ...l.end, price: pos.price } };
+                        }
+                        return l;
+                    }));
+                }
+            } else if (dragType === 'left' || dragType === 'right') {
+                const clamped = clampPoint({ x, y });
+                const pos = pixelToCoords(clamped.x, clamped.y);
+                if (pos && pos.time !== null && pos.price !== null) {
+                    setLines(prev => prev.map(l => {
+                        if (l.id === lineId) {
+                            if (dragType === 'left') {
+                                return { ...l, start: { ...l.start, time: pos.time } };
+                            }
+                            return { ...l, end: { ...l.end, time: pos.time } };
                         }
                         return l;
                     }));
