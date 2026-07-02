@@ -203,6 +203,14 @@ const DrawingLayer = ({
                 const handleIndex = circleTarget.getAttribute('data-handle'); // '1' or '2'
                 const line = lines.find(l => l.id.toString() === lineId);
                 if (line) {
+                    const isSelected = line.id === selectedDrawingId;
+                    setSelectedDrawingId(line.id);
+                    if (!isSelected) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        return;
+                    }
+
                     // Snapshot will be pushed on first actual mouse movement, not here
                     dragStateRef.current = {
                         type: handleIndex === '1' ? 'point1' : 'point2',
@@ -222,7 +230,14 @@ const DrawingLayer = ({
 
             const hitDrawing = getDrawingAtPoint(x, y);
             if (hitDrawing) {
+                const isSelected = hitDrawing.id === selectedDrawingId;
                 setSelectedDrawingId(hitDrawing.id);
+                if (!isSelected) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    return;
+                }
+
                 dragStateRef.current = {
                     type: 'body',
                     lineId: hitDrawing.id,
@@ -313,7 +328,8 @@ const DrawingLayer = ({
             if (!dragStateRef.current.hasMoved) return;
 
             if (dragStateRef.current.type === 'point1') {
-                const pos = pixelToCoords(x, y);
+                const clamped = clampPoint({ x, y });
+                const pos = pixelToCoords(clamped.x, clamped.y);
                 if (pos && pos.time !== null && pos.price !== null) {
                     setLines(prev => prev.map(l => {
                         if (l.id === lineId) {
@@ -323,7 +339,8 @@ const DrawingLayer = ({
                     }));
                 }
             } else if (dragStateRef.current.type === 'point2') {
-                const pos = pixelToCoords(x, y);
+                const clamped = clampPoint({ x, y });
+                const pos = pixelToCoords(clamped.x, clamped.y);
                 if (pos && pos.time !== null && pos.price !== null) {
                     setLines(prev => prev.map(l => {
                         if (l.id === lineId) {
@@ -333,19 +350,30 @@ const DrawingLayer = ({
                     }));
                 }
             } else if (dragStateRef.current.type === 'body') {
-                const rawNewStart = {
-                    x: dragStateRef.current.originalStartPix.x + dx,
-                    y: dragStateRef.current.originalStartPix.y + dy,
-                };
-                const rawNewEnd = {
-                    x: dragStateRef.current.originalEndPix.x + dx,
-                    y: dragStateRef.current.originalEndPix.y + dy,
-                };
-                const clampedStart = clampPoint(rawNewStart);
-                const clampedEnd = clampPoint(rawNewEnd);
+                const { originalStartPix, originalEndPix } = dragStateRef.current;
+                const left = Math.min(originalStartPix.x, originalEndPix.x);
+                const right = Math.max(originalStartPix.x, originalEndPix.x);
+                const top = Math.min(originalStartPix.y, originalEndPix.y);
+                const bottom = Math.max(originalStartPix.y, originalEndPix.y);
 
-                const startPos = pixelToCoords(clampedStart.x, clampedStart.y);
-                const endPos = pixelToCoords(clampedEnd.x, clampedEnd.y);
+                const maxDx = rect.width - right;
+                const minDx = -left;
+                const maxDy = rect.height - bottom;
+                const minDy = -top;
+                const clampedDx = clampValue(dx, minDx, maxDx);
+                const clampedDy = clampValue(dy, minDy, maxDy);
+
+                const newStartPix = {
+                    x: originalStartPix.x + clampedDx,
+                    y: originalStartPix.y + clampedDy,
+                };
+                const newEndPix = {
+                    x: originalEndPix.x + clampedDx,
+                    y: originalEndPix.y + clampedDy,
+                };
+
+                const startPos = pixelToCoords(newStartPix.x, newStartPix.y);
+                const endPos = pixelToCoords(newEndPix.x, newEndPix.y);
 
                 if (startPos && endPos && startPos.time !== null && startPos.price !== null && endPos.time !== null && endPos.price !== null) {
                     setLines(prev => prev.map(l => {
