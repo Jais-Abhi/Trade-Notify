@@ -28,14 +28,18 @@ const hitTest = (drawing, point, state) => {
     const metrics = getLongPositionMetrics({ drawing, ...state });
     if (!metrics.visible) return false;
 
-    const withinX = point.x >= metrics.left && point.x <= metrics.left + metrics.width;
-    const withinY = point.y >= Math.min(metrics.tpY, metrics.entryY) && point.y <= Math.max(metrics.slY, metrics.entryY);
     const tol = 8;
-    const nearTop = Math.abs(point.y - metrics.tpY) <= tol && withinX;
-    const nearEntry = Math.abs(point.y - metrics.entryY) <= tol && withinX;
-    const nearBottom = Math.abs(point.y - metrics.slY) <= tol && withinX;
+    const left = metrics.left;
+    const right = metrics.left + metrics.width;
+    const top = Math.min(metrics.tpY, metrics.entryY);
+    const bottom = Math.max(metrics.slY, metrics.entryY);
 
-    return (withinX && withinY) || nearTop || nearEntry || nearBottom;
+    // Only consider clicks near horizontal lines (tp, entry, sl)
+    const nearTop = Math.abs(point.y - metrics.tpY) <= tol && point.x >= left && point.x <= right;
+    const nearEntry = Math.abs(point.y - metrics.entryY) <= tol && point.x >= left && point.x <= right;
+    const nearBottom = Math.abs(point.y - metrics.slY) <= tol && point.x >= left && point.x <= right;
+
+    return nearTop || nearEntry || nearBottom;
 };
 
 const updateDom = (groupElement, metrics, style) => {
