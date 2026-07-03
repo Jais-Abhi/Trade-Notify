@@ -1,5 +1,5 @@
 import React from 'react';
-import resolveRenderableTime from '../../../../utils/resolveRenderableTime';
+import resolveRenderableTime from '../../../utils/resolveRenderableTime';
 
 const getPreviewMetrics = ({ startPoint, currentPoint, chart, series, candles = [] }) => {
     if (!startPoint || !currentPoint || !chart || !series) {

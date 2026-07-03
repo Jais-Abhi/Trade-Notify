@@ -1,7 +1,7 @@
 import React from 'react';
-import { getDrawingVisualStyle, getStrokeDasharray } from '../../../../utils/drawingUtils';
+import { getDrawingVisualStyle, getStrokeDasharray } from '../../../utils/drawingUtils';
 
-const FibonacciRenderer = ({ drawing, metrics, style, activeToolConfig }) => {
+const FibonacciRenderer = ({ drawing, metrics, style, activeToolConfig, isSelected }) => {
     if (!metrics?.visible) return null;
 
     const toolStyle = activeToolConfig?.style || {};
@@ -14,13 +14,17 @@ const FibonacciRenderer = ({ drawing, metrics, style, activeToolConfig }) => {
     const fillOpacity = drawing?.style?.fillOpacity ?? toolStyle.fillOpacity ?? style.fillOpacity;
     const textColor = drawing?.style?.textColor ?? toolStyle.textColor ?? style.color;
 
+    const showLabels = activeToolConfig?.options?.showLabels ?? true;
+    const showBackground = activeToolConfig?.options?.showBackground ?? true;
+
     const horizontalLines = metrics.levels.map((level, index) => {
         const nextLevel = metrics.levels[index + 1];
         const lineColor = level.color ?? style.color;
         return (
-            <g key={`level-${level.value}`}> 
-                {nextLevel && (
+            <g key={`level-${level.value}`} className="fibo-level-group">
+                {showBackground && nextLevel && (
                     <rect
+                        className="fibo-fill"
                         x={Math.min(metrics.start.x, metrics.end.x)}
                         y={Math.min(level.y, nextLevel.y)}
                         width={Math.max(2, Math.abs(metrics.end.x - metrics.start.x))}
@@ -31,6 +35,7 @@ const FibonacciRenderer = ({ drawing, metrics, style, activeToolConfig }) => {
                     />
                 )}
                 <line
+                    className="fibo-line"
                     x1={metrics.start.x}
                     y1={level.y}
                     x2={metrics.end.x}
@@ -41,16 +46,19 @@ const FibonacciRenderer = ({ drawing, metrics, style, activeToolConfig }) => {
                     strokeLinecap="round"
                     pointerEvents="none"
                 />
-                <text
-                    x={Math.min(metrics.start.x, metrics.end.x) + 8}
-                    y={level.y - 6}
-                    fill={textColor}
-                    fontSize="10"
-                    fontWeight="600"
-                    pointerEvents="none"
-                >
-                    {level.label}
-                </text>
+                {showLabels && (
+                    <text
+                        className="fibo-label"
+                        x={Math.min(metrics.start.x, metrics.end.x) + 8}
+                        y={level.y - 6}
+                        fill={textColor}
+                        fontSize="10"
+                        fontWeight="600"
+                        pointerEvents="none"
+                    >
+                        {level.label}
+                    </text>
+                )}
             </g>
         );
     });
@@ -58,6 +66,21 @@ const FibonacciRenderer = ({ drawing, metrics, style, activeToolConfig }) => {
     return (
         <>
             {horizontalLines}
+
+            {isSelected && (
+                <rect
+                    x={Math.min(metrics.start.x, metrics.end.x)}
+                    y={Math.min(metrics.start.y, metrics.end.y)}
+                    width={Math.max(2, Math.abs(metrics.end.x - metrics.start.x))}
+                    height={Math.max(2, Math.abs(metrics.end.y - metrics.start.y))}
+                    fill="none"
+                    stroke={style.color}
+                    strokeWidth="1"
+                    strokeDasharray="4, 4"
+                    opacity="0.65"
+                    pointerEvents="none"
+                />
+            )}
 
             <line
                 x1={metrics.start.x}

@@ -5,6 +5,7 @@ import { getToolImplementation } from '../tools/registry/registry';
 import { createDrawing, getDrawingVisualStyle, DEFAULT_DRAWING_STYLE } from '../utils/drawingUtils';
 import DrawingRenderer from './DrawingRenderer';
 import PriceRangePreview from '../tools/groups/measures/pricerange/pricerange.preview.jsx';
+import FibonacciPreview from '../tools/groups/fibonacci/fibonacci.preview.jsx';
 
 /**
  * DrawingLayer handles the SVG overlay for manual chart drawings.
