@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import resolveRenderableTime from '../utils/resolveRenderableTime';
 import { getDrawingMetadata } from '../utils/drawingMetadata';
 import { DEFAULT_DRAWING_STYLE } from '../utils/drawingUtils';
-import { getToolImplementation } from '../tools/registry/registry';
 
 const FloatingDrawingToolbar = ({
     selectedDrawing,
@@ -18,8 +17,6 @@ const FloatingDrawingToolbar = ({
     onClose
 }) => {
     const toolbarRef = useRef(null);
-    const impl = toolDefinition ? getToolImplementation(toolDefinition.tool) : null;
-    const toolUI = impl?.FloatingToolbar || impl?.UI?.FloatingToolbar || null;
     const supports = toolDefinition?.supports || {};
     const selectedDrawingColor = selectedDrawing?.style?.color ?? toolDefinition?.style?.color ?? DEFAULT_DRAWING_STYLE.color;
     const selectedDrawingWidth = selectedDrawing?.style?.width ?? toolDefinition?.style?.width ?? DEFAULT_DRAWING_STYLE.width;
@@ -67,26 +64,6 @@ const FloatingDrawingToolbar = ({
 
     if (!selectedDrawing) return null;
 
-    // Delegate to tool-specific floating toolbar when available
-    if (toolUI) {
-        const ToolUI = toolUI;
-        return (
-            <ToolUI
-                selectedDrawing={selectedDrawing}
-                chart={chart}
-                series={series}
-                chartContainerRef={chartContainerRef}
-                candles={candles}
-                toolDefinition={toolDefinition}
-                onStyleChange={onStyleChange}
-                onSave={onSave}
-                onDelete={onDelete}
-                isSaving={isSaving}
-                onClose={onClose}
-            />
-        );
-    }
-
     const handleColorChange = (event) => {
         setColor(event.target.value);
     };
@@ -128,46 +105,63 @@ const FloatingDrawingToolbar = ({
             style={{ minWidth: '320px', maxWidth: '360px', display: 'flex' }}
             onMouseDown={(e) => e.stopPropagation()}
         >
-            <div className="flex flex-wrap items-center gap-2">
-                {supports.color && (
-                    <div className="flex items-center gap-2">
-                        <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
-                        <input
-                            id="toolbar-color-picker"
-                            type="color"
-                            value={color}
-                            onChange={handleColorChange}
-                            className="w-9 h-9 p-0 border-0 rounded-lg cursor-pointer"
-                        />
-                    </div>
-                )}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                    {supports.color && (
+                        <div className="flex items-center gap-2">
+                            <label htmlFor="toolbar-color-picker" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Color</label>
+                            <input
+                                id="toolbar-color-picker"
+                                type="color"
+                                value={color}
+                                onChange={handleColorChange}
+                                className="w-9 h-9 p-0 border-0 rounded-lg cursor-pointer"
+                            />
+                        </div>
+                    )}
 
-                {supports.width && (
-                    <div className="flex items-center gap-2 min-w-[140px]">
-                        <label htmlFor="toolbar-width-range" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Width</label>
-                        <input
-                            id="toolbar-width-range"
-                            type="range"
-                            min="1"
-                            max="12"
-                            step="1"
-                            value={width}
-                            onChange={handleWidthChange}
-                            className="w-24 accent-sky-500"
-                        />
-                        <span className="text-[11px] text-slate-300 min-w-[16px] text-center">{width}</span>
-                    </div>
-                )}
-            </div>
+                    {supports.width && (
+                        <div className="flex items-center gap-2 min-w-[140px]">
+                            <label htmlFor="toolbar-width-range" className="text-[11px] text-slate-400 uppercase tracking-[0.2em]">Width</label>
+                            <input
+                                id="toolbar-width-range"
+                                type="range"
+                                min="1"
+                                max="12"
+                                step="1"
+                                value={width}
+                                onChange={handleWidthChange}
+                                className="w-24 accent-sky-500"
+                            />
+                            <span className="text-[11px] text-slate-300 min-w-[16px] text-center">{width}</span>
+                        </div>
+                    )}
+                </div>
 
-            <div className="flex items-center justify-end">
-                <button
-                    type="button"
-                    onClick={() => setShowDetails((prev) => !prev)}
-                    className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-200"
-                >
-                    {showDetails ? 'Hide Details' : 'Show Details'}
-                </button>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                    <button
+                        onClick={handleSave}
+                        disabled={isSaving}
+                        className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isSaving ? 'Saving...' : 'Save'}
+                    </button>
+
+                    <button
+                        onClick={onDelete}
+                        className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-rose-600 hover:bg-rose-500"
+                    >
+                        Delete
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={() => setShowDetails((prev) => !prev)}
+                        className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 hover:text-slate-200"
+                    >
+                        {showDetails ? 'Hide Details' : 'Show Details'}
+                    </button>
+                </div>
             </div>
 
             {showDetails && (
@@ -187,23 +181,6 @@ const FloatingDrawingToolbar = ({
             {errorMessage && (
                 <div className="text-[11px] text-rose-400">{errorMessage}</div>
             )}
-
-            <div className="flex items-center justify-end gap-2">
-                <button
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    {isSaving ? 'Saving...' : 'Save'}
-                </button>
-
-                <button
-                    onClick={onDelete}
-                    className="px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] rounded-xl bg-rose-600 hover:bg-rose-500"
-                >
-                    Delete
-                </button>
-            </div>
         </div>
     );
 };
