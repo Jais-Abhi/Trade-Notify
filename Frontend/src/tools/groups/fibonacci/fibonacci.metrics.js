@@ -1,4 +1,4 @@
-import resolveRenderableTime from '../../../../utils/resolveRenderableTime';
+import resolveRenderableTime from '../../../utils/resolveRenderableTime';
 
 const getLevelRows = ({ drawing, activeToolConfig }) => {
     const levels = activeToolConfig?.options?.levels || [];
