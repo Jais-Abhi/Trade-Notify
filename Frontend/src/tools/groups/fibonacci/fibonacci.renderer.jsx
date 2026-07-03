@@ -14,8 +14,8 @@ const FibonacciRenderer = ({ drawing, metrics, style, activeToolConfig, isSelect
     const fillOpacity = drawing?.style?.fillOpacity ?? toolStyle.fillOpacity ?? style.fillOpacity;
     const textColor = drawing?.style?.textColor ?? toolStyle.textColor ?? style.color;
 
-    const showLabels = activeToolConfig?.options?.showLabels ?? true;
-    const showBackground = activeToolConfig?.options?.showBackground ?? true;
+    const showLabels = drawing?.options?.showLabels ?? activeToolConfig?.options?.showLabels ?? true;
+    const showBackground = drawing?.options?.showBackground ?? activeToolConfig?.options?.showBackground ?? true;
 
     const horizontalLines = metrics.levels.map((level, index) => {
         const nextLevel = metrics.levels[index + 1];

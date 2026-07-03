@@ -1,7 +1,7 @@
 import resolveRenderableTime from '../../../utils/resolveRenderableTime';
 
 const getLevelRows = ({ drawing, activeToolConfig }) => {
-    const levels = activeToolConfig?.options?.levels || [];
+    const levels = drawing?.options?.levels ?? (activeToolConfig?.options?.levels || []);
     return levels.filter((level) => level?.enabled);
 };
 
