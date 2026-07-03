@@ -577,6 +577,19 @@ const DrawingLayer = ({
                     />
                 </g>
             )}
+            {isDrawing && startPoint && previewPoint && activeTool === 'fibonacciretracement' && (
+                <g>
+                    <FibonacciPreview
+                        startPoint={startPoint}
+                        currentPoint={previewPoint}
+                        chart={chart}
+                        series={series}
+                        candles={candles}
+                        style={activeToolConfig?.style || {}}
+                        activeToolConfig={activeToolConfig}
+                    />
+                </g>
+            )}
         </svg>
     );
 };
