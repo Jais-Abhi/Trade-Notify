@@ -30,13 +30,36 @@ const hitTest = (drawing, point, state) => {
     const metrics = getFibonacciMetrics({ drawing, ...state });
     if (!metrics.visible) return false;
 
-    const tolerance = 8;
-    const left = Math.min(metrics.start.x, metrics.end.x) - tolerance;
-    const right = Math.max(metrics.start.x, metrics.end.x) + tolerance;
-    const top = Math.min(metrics.start.y, metrics.end.y) - tolerance;
-    const bottom = Math.max(metrics.start.y, metrics.end.y) + tolerance;
-
-    return point.x >= left && point.x <= right && point.y >= top && point.y <= bottom;
+    // Only detect hits on the diagonal line, not on fills or level lines
+    // Use point-to-line distance calculation
+    const x1 = metrics.start.x;
+    const y1 = metrics.start.y;
+    const x2 = metrics.end.x;
+    const y2 = metrics.end.y;
+    
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const lengthSq = dx * dx + dy * dy;
+    
+    if (lengthSq === 0) {
+        // Start and end are the same point
+        const dist = Math.hypot(point.x - x1, point.y - y1);
+        return dist <= 8;
+    }
+    
+    // Calculate the projection of point onto the line
+    const t = ((point.x - x1) * dx + (point.y - y1) * dy) / lengthSq;
+    const clamped = Math.max(0, Math.min(1, t));
+    
+    // Find the closest point on the line segment
+    const nearestX = x1 + clamped * dx;
+    const nearestY = y1 + clamped * dy;
+    
+    // Distance from point to line
+    const dist = Math.hypot(point.x - nearestX, point.y - nearestY);
+    
+    // Only hit if within 8px tolerance of the diagonal line
+    return dist <= 8;
 };
 
 const updateDom = (groupElement, metrics, style = {}) => {
