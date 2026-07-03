@@ -31,51 +31,8 @@ const TrendlineFloatingToolbar = ({
 
     useEffect(() => {
         if (!selectedDrawing || !chart || !series || !chartContainerRef?.current || !toolbarRef.current) return;
-
-        let rafId;
-        const updatePosition = () => {
-            const canvas = chartContainerRef.current.querySelector('canvas');
-            if (!canvas) {
-                toolbarRef.current.style.display = 'none';
-                rafId = requestAnimationFrame(updatePosition);
-                return;
-            }
-
-            const chartRect = chartContainerRef.current.getBoundingClientRect();
-            const canvasRect = canvas.getBoundingClientRect();
-
-            const resolvedStartTime = resolveRenderableTime(selectedDrawing.start.time, candles);
-            const resolvedEndTime = resolveRenderableTime(selectedDrawing.end.time, candles);
-            const startCoord = {
-                x: chart.timeScale().timeToCoordinate(resolvedStartTime),
-                y: series.priceToCoordinate(selectedDrawing.start.price)
-            };
-            const endCoord = {
-                x: chart.timeScale().timeToCoordinate(resolvedEndTime),
-                y: series.priceToCoordinate(selectedDrawing.end.price)
-            };
-
-            if ([startCoord.x, startCoord.y, endCoord.x, endCoord.y].some((v) => typeof v !== 'number' || Number.isNaN(v))) {
-                toolbarRef.current.style.display = 'none';
-                rafId = requestAnimationFrame(updatePosition);
-                return;
-            }
-
-            const midX = (startCoord.x + endCoord.x) / 2;
-            const topY = Math.min(startCoord.y, endCoord.y) - 12;
-            const maxLeft = Math.max(16, Math.min(chartRect.width - 340, canvasRect.left - chartRect.left + midX));
-            const maxTop = Math.max(16, Math.min(chartRect.height - 220, canvasRect.top - chartRect.top + topY));
-
-            toolbarRef.current.style.display = 'flex';
-            toolbarRef.current.style.left = `${maxLeft}px`;
-            toolbarRef.current.style.top = `${maxTop}px`;
-
-            rafId = requestAnimationFrame(updatePosition);
-        };
-
-        rafId = requestAnimationFrame(updatePosition);
-        return () => cancelAnimationFrame(rafId);
-    }, [selectedDrawing?.id, selectedDrawing?.start?.time, selectedDrawing?.start?.price, selectedDrawing?.end?.time, selectedDrawing?.end?.price, chart, series, chartContainerRef, candles]);
+        toolbarRef.current.style.display = 'flex';
+    }, [selectedDrawing?.id, chart, series, chartContainerRef]);
 
     useEffect(() => {
         const handleDocumentClick = (event) => {
@@ -123,8 +80,8 @@ const TrendlineFloatingToolbar = ({
     return (
         <div
             ref={toolbarRef}
-            className="absolute z-50 flex flex-col gap-2 px-3 py-3 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl shadow-slate-950/40 backdrop-blur-xl text-slate-100 pointer-events-auto transition-all"
-            style={{ transform: 'translate(-50%, -100%)', minWidth: '320px', maxWidth: '360px', display: 'none' }}
+            className="absolute right-4 top-4 z-50 flex flex-col gap-2 px-3 py-3 rounded-2xl bg-slate-900/95 border border-slate-700 shadow-2xl shadow-slate-950/40 backdrop-blur-xl text-slate-100 pointer-events-auto transition-all"
+            style={{ minWidth: '320px', maxWidth: '360px', display: 'flex' }}
             onMouseDown={(e) => e.stopPropagation()}
         >
             <div className="flex flex-wrap items-center gap-2">
