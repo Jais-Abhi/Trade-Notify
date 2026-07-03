@@ -1,5 +1,5 @@
 import React from 'react';
-import { MousePointer2, TrendingUp, Eraser, Minus, LineChart, Sparkles } from 'lucide-react';
+import { ArrowUpDown, Eraser, LineChart, MoveUpRight, MousePointer2, Sparkles, TrendingDown, TrendingUp } from 'lucide-react';
 
 /**
  * DrawingToolbar provides the user interface to switch between different
@@ -9,19 +9,25 @@ const DrawingToolbar = ({ activeTool, setActiveTool, onClearAll, tools = [], too
     const resolvedGroups = toolbarGroups || [{ key: 'default', tools }];
     const getToolIcon = (tool) => {
         const iconKey = tool?.icon?.toString().toLowerCase();
-        if (iconKey?.includes('trend')) {
+        if (iconKey?.includes('trendline')) {
+            return <MoveUpRight className="w-5 h-5" />;
+        }
+        if (iconKey?.includes('long') || iconKey?.includes('long-position')) {
             return <TrendingUp className="w-5 h-5" />;
         }
-        if (iconKey?.includes('price') || iconKey?.includes('range') || iconKey?.includes('ruler')) {
-            return <LineChart className="w-5 h-5" />;
+        if (iconKey?.includes('short') || iconKey?.includes('short-position')) {
+            return <TrendingDown className="w-5 h-5" />;
+        }
+        if (iconKey?.includes('price') || iconKey?.includes('range') || iconKey?.includes('ruler') || iconKey?.includes('pricerange')) {
+            return <ArrowUpDown className="w-5 h-5" />;
         }
         if (iconKey?.includes('line')) {
-            return <Minus className="w-5 h-5" />;
+            return <LineChart className="w-5 h-5" />;
         }
         if (iconKey?.includes('spark') || iconKey?.includes('star')) {
             return <Sparkles className="w-5 h-5" />;
         }
-        return <Minus className="w-5 h-5" />;
+        return <LineChart className="w-5 h-5" />;
     };
 
     return (
