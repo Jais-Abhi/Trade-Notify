@@ -47,19 +47,11 @@ const resolveRenderableTime = (drawingTime, candles = []) => {
         }
     }
 
-    const nextIndex = Math.min(left, candles.length - 1);
-    const nextTime = Number(candles[nextIndex]?.time);
-    if (!Number.isFinite(bestMatch)) {
-        return nextTime;
-    }
-
-    if (!Number.isFinite(nextTime)) {
-        return bestMatch;
-    }
-
-    return Math.abs(normalizedDrawingTime - bestMatch) <= Math.abs(nextTime - normalizedDrawingTime)
-        ? bestMatch
-        : nextTime;
+    // Return the candle whose open time is <= the drawing timestamp.
+    // This is the candle that CONTAINS the drawing, not the nearest one.
+    // For cross-timeframe rendering, we need the candle that includes the timestamp,
+    // not whichever candle happens to be closest.
+    return bestMatch;
 };
 
 export default resolveRenderableTime;
