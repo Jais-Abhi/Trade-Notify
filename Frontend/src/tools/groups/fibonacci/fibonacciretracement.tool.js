@@ -46,6 +46,17 @@ const updateDom = (groupElement, metrics, style = {}) => {
     groupElement.setAttribute('display', visible ? 'block' : 'none');
     if (!visible) return;
 
+    // Extract style properties
+    const diagonalColor = style.diagonalColor ?? style.color ?? '#ffffff';
+    const diagonalWidth = style.diagonalWidth ?? style.width ?? 2;
+    const diagonalLineStyle = style.diagonalLineStyle ?? style.lineStyle ?? 'solid';
+    const levelLineWidth = style.levelWidth ?? style.width ?? 2;
+    const levelLineStyle = style.levelLineStyle ?? style.lineStyle ?? 'solid';
+    const fillOpacity = style.fillOpacity ?? 0.1;
+    const textColor = style.textColor ?? style.color ?? '#ffffff';
+    const dasharray = diagonalLineStyle === 'dashed' ? '6, 4' : '0';
+    const levelDasharray = levelLineStyle === 'dashed' ? '6, 4' : '0';
+
     // Update all horizontal level lines and fills
     const levelGroups = groupElement.querySelectorAll('.fibo-level-group');
     levelGroups.forEach((levelGroup, index) => {
@@ -61,6 +72,8 @@ const updateDom = (groupElement, metrics, style = {}) => {
                 fillRect.setAttribute('y', Math.min(level.y, nextLevel.y));
                 fillRect.setAttribute('width', Math.max(2, Math.abs(metrics.end.x - metrics.start.x)));
                 fillRect.setAttribute('height', Math.abs(nextLevel.y - level.y));
+                fillRect.setAttribute('fill', level.color ?? style.color ?? '#ffffff');
+                fillRect.setAttribute('opacity', fillOpacity);
             }
         }
 
@@ -71,6 +84,11 @@ const updateDom = (groupElement, metrics, style = {}) => {
             levelLine.setAttribute('y1', level.y);
             levelLine.setAttribute('x2', metrics.end.x);
             levelLine.setAttribute('y2', level.y);
+            levelLine.setAttribute('stroke', level.color ?? style.color ?? '#ffffff');
+            levelLine.setAttribute('stroke-width', levelLineWidth);
+            levelLine.setAttribute('stroke-dasharray', levelDasharray);
+            levelLine.setAttribute('stroke-linecap', 'round');
+            levelLine.setAttribute('pointer-events', 'none');
         }
 
         // Update level label
@@ -78,6 +96,10 @@ const updateDom = (groupElement, metrics, style = {}) => {
         if (levelLabel) {
             levelLabel.setAttribute('x', Math.min(metrics.start.x, metrics.end.x) + 8);
             levelLabel.setAttribute('y', level.y - 6);
+            levelLabel.setAttribute('fill', textColor);
+            levelLabel.setAttribute('font-size', '10');
+            levelLabel.setAttribute('font-weight', '600');
+            levelLabel.setAttribute('pointer-events', 'none');
         }
     });
 
@@ -92,6 +114,7 @@ const updateDom = (groupElement, metrics, style = {}) => {
         selectionRect.setAttribute('y', Math.min(metrics.start.y, metrics.end.y));
         selectionRect.setAttribute('width', Math.max(2, Math.abs(metrics.end.x - metrics.start.x)));
         selectionRect.setAttribute('height', Math.max(2, Math.abs(metrics.end.y - metrics.start.y)));
+        selectionRect.setAttribute('stroke', style.color ?? '#ffffff');
     }
 
     // Update diagonal lines (both visible and transparent hit-test)
@@ -100,11 +123,20 @@ const updateDom = (groupElement, metrics, style = {}) => {
         // Skip level lines - they were already updated above
         if (line.classList.contains('fibo-line')) return;
         
-        // Update all other lines (diagonal visible + hit-test transparent)
+        // Update coordinates
         line.setAttribute('x1', metrics.start.x);
         line.setAttribute('y1', metrics.start.y);
         line.setAttribute('x2', metrics.end.x);
         line.setAttribute('y2', metrics.end.y);
+
+        // Update styles for visible diagonal line (not the transparent hit-test line)
+        if (line.getAttribute('stroke') !== 'transparent') {
+            line.setAttribute('stroke', diagonalColor);
+            line.setAttribute('stroke-width', diagonalWidth);
+            line.setAttribute('stroke-dasharray', dasharray);
+            line.setAttribute('stroke-linecap', 'round');
+            line.setAttribute('pointer-events', 'none');
+        }
     });
 
     // Update handle circles
@@ -116,10 +148,18 @@ const updateDom = (groupElement, metrics, style = {}) => {
         if (c1) {
             c1.setAttribute('cx', metrics.start.x);
             c1.setAttribute('cy', metrics.start.y);
+            c1.setAttribute('stroke', diagonalColor);
+            c1.setAttribute('stroke-width', 2.5);
+            c1.setAttribute('r', 5);
+            c1.setAttribute('fill', '#ffffff');
         }
         if (c2) {
             c2.setAttribute('cx', metrics.end.x);
             c2.setAttribute('cy', metrics.end.y);
+            c2.setAttribute('stroke', diagonalColor);
+            c2.setAttribute('stroke-width', 2.5);
+            c2.setAttribute('r', 5);
+            c2.setAttribute('fill', '#ffffff');
         }
     }
 };
