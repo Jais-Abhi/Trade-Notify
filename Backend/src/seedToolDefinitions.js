@@ -130,6 +130,93 @@ const seedToolDefinitions = async () => {
         movable: true,
         resizable: true
     }
+},
+{
+    tool: 'fibonacciretracement',
+    displayName: 'Fibonacci Retracement',
+    category: 'fibonacci',
+    icon: 'fibonacci-retracement',
+    order: 5,
+    enabled: true,
+    style: {
+        diagonalColor: '#9ca3af',
+        diagonalLineStyle: 'dashed',
+        diagonalWidth: 1,
+
+        levelWidth: 1,
+        levelLineStyle: 'solid',
+
+        textColor: '#ffffff',
+        fillOpacity: 0.12
+    },
+    options: {
+        showLabels: true,
+        showPrices: false,
+        showBackground: true,
+        extendLevels: true,
+        levels: [
+            {
+                value: 1,
+                label: '100%',
+                color: '#3b82f6',
+                enabled: true
+            },
+            {
+                value: 0.786,
+                label: '78.6%',
+                color: '#22c55e',
+                enabled: true
+            },
+            {
+                value: 0.618,
+                label: '61.8%',
+                color: '#eab308',
+                enabled: true
+            },
+            {
+                value: 0.5,
+                label: '50%',
+                color: '#f97316',
+                enabled: true
+            },
+            {
+                value: 0.382,
+                label: '38.2%',
+                color: '#ef4444',
+                enabled: true
+            },
+            {
+                value: 0.236,
+                label: '23.6%',
+                color: '#a855f7',
+                enabled: true
+            },
+            {
+                value: 0,
+                label: '0%',
+                color: '#6b7280',
+                enabled: true
+            }
+        ]
+    },
+    supports: {
+        diagonalColor: true,
+        diagonalLineStyle: true,
+        diagonalWidth: true,
+
+        levelColors: true,
+        levelWidth: true,
+        levelLineStyle: true,
+
+        textColor: true,
+        fillOpacity: true,
+
+        labels: true,
+        background: true,
+
+        movable: true,
+        resizable: true
+    }
 }
         ];
 
