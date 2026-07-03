@@ -1,4 +1,4 @@
-import FibonacciRenderer from './fibonacciretracement.renderer.jsx';
+import FibonacciRenderer from './fibonacci.renderer.jsx';
 import { getFibonacciMetrics } from './fibonacci.metrics.js';
 import { getStrokeDasharray } from '../../../utils/drawingUtils';
 
