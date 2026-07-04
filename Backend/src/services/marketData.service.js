@@ -60,7 +60,7 @@ class MarketDataService {
                     close: Number(close[i])
                 });
             }
-
+            
             return candles;
         } catch (error) {
             if (error.response && error.response.status === 404) {
