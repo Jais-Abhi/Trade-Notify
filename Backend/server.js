@@ -12,15 +12,22 @@ import chartDrawingRoutes from './src/routes/chartDrawing.routes.js';
 import cookieParser from 'cookie-parser';
 import toolDefinitionRoutes from './src/routes/toolDefinition.routes.js';
 import toolPreferenceRoutes from './src/routes/toolPreference.routes.js';
-import {debugLatestThreeBaseGroups, findBaseCandleGroup} from "./src/services/ftf/baseCandleScanner.js"
+import { startFTFScannerCron } from './src/cron/ftfScanner.cron.js';
+
 // Load environment variables
 
-// Connect to database
-connectDB();
-findBaseCandleGroup();
-// findPreviousBaseGroup();
-// debugLatestThreeBaseGroups()
 const app = express();
+
+const startServer = async () => {
+    try {
+        await connectDB();
+        startFTFScannerCron();
+    } catch (error) {
+        console.error('Failed to connect to MongoDB', error);
+    }
+};
+
+startServer();
 
 // Middleware
 const allowedOrigins = [
