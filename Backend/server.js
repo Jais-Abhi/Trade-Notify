@@ -12,16 +12,14 @@ import chartDrawingRoutes from './src/routes/chartDrawing.routes.js';
 import cookieParser from 'cookie-parser';
 import toolDefinitionRoutes from './src/routes/toolDefinition.routes.js';
 import toolPreferenceRoutes from './src/routes/toolPreference.routes.js';
-import findBaseCandleGroup from "./src/services/ftf/baseCandleScanner.js"
-import findPreviousBaseGroup from "./src/services/ftf/baseCandleScanner.js"
-import {debugLatestThreeBaseGroups} from "./src/services/ftf/baseCandleScanner.js"
+import {debugLatestThreeBaseGroups, findBaseCandleGroup} from "./src/services/ftf/baseCandleScanner.js"
 // Load environment variables
 
 // Connect to database
 connectDB();
-// findBaseCandleGroup();
+findBaseCandleGroup();
 // findPreviousBaseGroup();
-debugLatestThreeBaseGroups()
+// debugLatestThreeBaseGroups()
 const app = express();
 
 // Middleware

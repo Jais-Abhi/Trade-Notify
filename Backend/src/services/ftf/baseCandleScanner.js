@@ -1,15 +1,19 @@
 import { FTF_CONFIG } from '../../config/ftfConfig.js';
 import {
     getBody,
+    getRange,
     isBaseCandle,
     isValidLegIn,
     isValidLegOut,
     requiredLegBody
 } from '../../utils/ftfCalculations.js';
 import marketDataService from '../marketData.service.js';
+import FTF from '../../models/baseCandle.schema.js';
 
 const MIN_BASE_CANDLES = FTF_CONFIG.base.minCandles;
 const MAX_BASE_CANDLES = FTF_CONFIG.base.maxCandles;
+const DEFAULT_SYMBOL = 'BTC-USD';
+const DEFAULT_INTERVAL = '5m';
 
 const toIST = (timestamp) => {
     const date = new Date(timestamp * 1000);
@@ -25,7 +29,25 @@ const toIST = (timestamp) => {
     });
 };
 
-const logCandidateSequence = ({ sequenceLength, baseStartIndex, baseEndIndex, candles }) => {
+const getCandleMetrics = (candle) => {
+    const body = getBody(candle);
+    const range = getRange(candle);
+    const bodyPercentage = range === 0 ? 100 : (body / range) * 100;
+
+    return {
+        body,
+        range,
+        bodyPercentage
+    };
+};
+
+const logCandidateSequence = ({ sequenceLength, baseStartIndex, baseEndIndex, candles, baseCandles }) => {
+    const largestBaseBody = Math.max(...baseCandles.map((baseCandle) => getBody(baseCandle)));
+    const largestBaseBodyPercentage = (() => {
+        const largestBaseRange = getRange(baseCandles.find((baseCandle) => getBody(baseCandle) === largestBaseBody) || baseCandles[0]);
+        return largestBaseRange === 0 ? 100 : (largestBaseBody / largestBaseRange) * 100;
+    })();
+
     console.log('================================================');
     console.log('Candidate Sequence');
     console.log(`Length ${sequenceLength}`);
@@ -33,6 +55,15 @@ const logCandidateSequence = ({ sequenceLength, baseStartIndex, baseEndIndex, ca
     console.log(`Base End Index ${baseEndIndex}`);
     console.log(`Base Start Time ${toIST(candles[baseStartIndex].time)}`);
     console.log(`Base End Time ${toIST(candles[baseEndIndex].time)}`);
+    console.log(`Number of Base Candles ${baseCandles.length}`);
+
+    baseCandles.forEach((baseCandle, index) => {
+        const { bodyPercentage } = getCandleMetrics(baseCandle);
+        console.log(`Base Candle ${index + 1} Body Percentage : ${bodyPercentage.toFixed(2)}%`);
+    });
+
+    console.log(`Largest Base Body ${largestBaseBody.toFixed(4)}`);
+    console.log(`Largest Base Body Percentage ${largestBaseBodyPercentage.toFixed(2)}%`);
     console.log('================================================');
 };
 
@@ -57,18 +88,29 @@ const buildValidationResult = ({ legInBody, legOutBody, largestBaseBody }) => {
     };
 };
 
-const logValidationSummary = ({ validation, legIn, legOut, largestBaseBody }) => {
+const logValidationSummary = ({ validation, legIn, legOut, largestBaseBody, baseCandles }) => {
+    const legInMetrics = getCandleMetrics(legIn);
+    const legOutMetrics = getCandleMetrics(legOut);
+    const largestBaseCandle = baseCandles.find((baseCandle) => getBody(baseCandle) === largestBaseBody) || baseCandles[0];
+    const largestBaseMetrics = getCandleMetrics(largestBaseCandle);
+
     console.log('================================================');
     console.log('Leg-In');
     console.log(`Time ${toIST(legIn.time)}`);
-    console.log(`Body ${getBody(legIn).toFixed(4)}`);
+    console.log(`Body ${legInMetrics.body.toFixed(4)}`);
+    console.log(`Range ${legInMetrics.range.toFixed(4)}`);
+    console.log(`Body Percentage ${legInMetrics.bodyPercentage.toFixed(2)}%`);
     console.log('================================================');
     console.log('Leg-Out');
     console.log(`Time ${toIST(legOut.time)}`);
-    console.log(`Body ${getBody(legOut).toFixed(4)}`);
+    console.log(`Body ${legOutMetrics.body.toFixed(4)}`);
+    console.log(`Range ${legOutMetrics.range.toFixed(4)}`);
+    console.log(`Body Percentage ${legOutMetrics.bodyPercentage.toFixed(2)}%`);
     console.log('================================================');
-    console.log('Largest Base Body');
-    console.log(largestBaseBody.toFixed(4));
+    console.log('Largest Base');
+    console.log(`Body ${largestBaseBody.toFixed(4)}`);
+    console.log(`Range ${largestBaseMetrics.range.toFixed(4)}`);
+    console.log(`Body Percentage ${largestBaseMetrics.bodyPercentage.toFixed(2)}%`);
     console.log('================================================');
     console.log('Required Leg Body');
     console.log(validation.requiredLegBody.toFixed(4));
@@ -81,19 +123,24 @@ const logValidationSummary = ({ validation, legIn, legOut, largestBaseBody }) =>
     console.log('================================================');
 };
 
-export const debugLatestThreeBaseGroups = async () => {
-
+const fetchCandles = async () => {
     const candles = await marketDataService.getCandles(
         "BTC-USD",
         "5m",
         "60d"
     );
+    return candles;
+}
+
+export const debugLatestThreeBaseGroups = async () => {
+
+    const candles = await fetchCandles();
 
     if (!Array.isArray(candles) || candles.length < 3) {
         return [];
     }
 
-    let startIndex = candles.length - 1;
+    let startIndex = candles.length - 3;
 
     const groups = [];
 
@@ -101,9 +148,9 @@ export const debugLatestThreeBaseGroups = async () => {
 
         console.log(`\n\n============== BASE GROUP ${i + 1} ==============\n`);
 
-        const group = findBaseCandleGroup(
+        const group = await findBaseCandleGroup(
             candles,
-            startIndex
+            { startIndex, symbol: DEFAULT_SYMBOL, interval: DEFAULT_INTERVAL }
         );
 
         if (!group) {
@@ -122,25 +169,67 @@ export const debugLatestThreeBaseGroups = async () => {
     return groups;
 };
 
-export const findBaseCandleGroup = (candles, startIndex) => {
-    // const candles = candlesInput || await marketDataService.getCandles('JIOFIN.NS', '5m', '60d');
+export const findBaseCandleGroup = async (candlesInput, options = {}) => {
+    const normalizedOptions = typeof options === 'number' ? { startIndex: options } : options;
+    const symbol = normalizedOptions.symbol || DEFAULT_SYMBOL;
+    const interval = normalizedOptions.interval || DEFAULT_INTERVAL;
+    const candles = Array.isArray(candlesInput)
+        ? candlesInput
+        : await marketDataService.getCandles(symbol, interval, '60d');
 
     if (!Array.isArray(candles) || candles.length < 3) {
         return null;
     }
 
+    let ftf = await FTF.findOne({ symbol, interval });
+
+    if (!ftf) {
+        ftf = new FTF({
+            symbol,
+            interval,
+            latestBaseTimestamp: 0,
+            baseCandleGroups: []
+        });
+    }
+
+    const latestBaseTimestamp = ftf.latestBaseTimestamp;
+    let startIndex = typeof normalizedOptions.startIndex === 'number'
+        ? normalizedOptions.startIndex
+        : candles.length - 3;
     let scanIndex = startIndex;
 
     while (scanIndex >= 0) {
         const candle = candles[scanIndex];
-        const body = getBody(candle);
+
+        if (candle.time <= latestBaseTimestamp) {
+            console.log('================================================');
+            console.log('Scanner Stopped');
+            console.log('================================================');
+            console.log('Reason :');
+            console.log('Already processed candles reached.');
+            console.log('');
+            console.log('Latest Base Timestamp :');
+            console.log(latestBaseTimestamp);
+            console.log('Scanner stopped successfully.');
+            console.log('================================================');
+            return null;
+        }
         const isBaseCandidate = isBaseCandle(candle);
+        const { body, range, bodyPercentage } = getCandleMetrics(candle);
 
         console.log('================================================');
         console.log('Scanning Candle');
-        console.log(`Time ${toIST(candle.time)}`);
-        console.log(`Body ${body.toFixed(4)}`);
-        console.log(`Base Candidate ${isBaseCandidate ? 'YES' : 'NO'}`);
+        console.log(`Time            : ${toIST(candle.time)}`);
+        console.log(`Open            : ${candle.open.toFixed(4)}`);
+        console.log(`High            : ${candle.high.toFixed(4)}`);
+        console.log(`Low             : ${candle.low.toFixed(4)}`);
+        console.log(`Close           : ${candle.close.toFixed(4)}`);
+        console.log('');
+        console.log(`Body            : ${body.toFixed(4)}`);
+        console.log(`Range           : ${range.toFixed(4)}`);
+        console.log(`Body Percentage : ${bodyPercentage.toFixed(2)}%`);
+        console.log('');
+        console.log(`Base Candidate  : ${isBaseCandidate ? 'YES' : 'NO'}`);
         console.log('================================================');
 
         if (!isBaseCandidate) {
@@ -169,15 +258,17 @@ export const findBaseCandleGroup = (candles, startIndex) => {
             continue;
         }
 
+        const baseStartIndex = sequenceEndIndex;
+        const baseEndIndex = sequenceStartIndex;
+        const baseCandles = candles.slice(baseStartIndex, baseEndIndex + 1);
+
         logCandidateSequence({
             sequenceLength,
             baseStartIndex: sequenceEndIndex,
             baseEndIndex: sequenceStartIndex,
-            candles
+            candles,
+            baseCandles
         });
-
-        const baseStartIndex = sequenceEndIndex;
-        const baseEndIndex = sequenceStartIndex;
         const legInIndex = baseStartIndex - 1;
         const legOutIndex = baseEndIndex + 1;
 
@@ -191,7 +282,6 @@ export const findBaseCandleGroup = (candles, startIndex) => {
             continue;
         }
 
-        const baseCandles = candles.slice(baseStartIndex, baseEndIndex + 1);
         const legIn = candles[legInIndex];
         const legOut = candles[legOutIndex];
         const largestBaseBody = Math.max(...baseCandles.map((baseCandle) => getBody(baseCandle)));
@@ -201,7 +291,7 @@ export const findBaseCandleGroup = (candles, startIndex) => {
             largestBaseBody
         });
 
-        logValidationSummary({ validation, legIn, legOut, largestBaseBody });
+        logValidationSummary({ validation, legIn, legOut, largestBaseBody, baseCandles });
 
         if (!validation.overall) {
             console.log('================================================');
@@ -238,6 +328,29 @@ export const findBaseCandleGroup = (candles, startIndex) => {
 
     nextStartIndex: baseStartIndex - 1
 };
+
+        ftf.baseCandleGroups.push({
+            baseCandles,
+            legIn,
+            legOut,
+            baseStartTime: result.baseStartTime,
+            baseEndTime: result.baseEndTime,
+            detectedAt: new Date()
+        });
+
+        ftf.latestBaseTimestamp = result.baseEndTime;
+        await ftf.save();
+
+        console.log('================================================');
+        console.log('MongoDB Save');
+        console.log('================================================');
+        console.log(`Symbol                : ${symbol}`);
+        console.log(`Interval              : ${interval}`);
+        console.log(`Base Start Time (IST) : ${toIST(result.baseStartTime)}`);
+        console.log(`Base End Time (IST)   : ${toIST(result.baseEndTime)}`);
+        console.log(`Updated Timestamp     : ${result.baseEndTime}`);
+        console.log(`Status                : SUCCESS`);
+        console.log('================================================');
 
         console.log('================================================');
         console.log('Base Candle Set Found');

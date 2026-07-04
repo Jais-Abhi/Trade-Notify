@@ -60,7 +60,10 @@ class MarketDataService {
                     close: Number(close[i])
                 });
             }
-            
+            console.log(candles[candles.length - 1]) 
+            console.log(candles[candles.length - 2]) 
+            console.log(candles[candles.length - 3]) 
+            console.log(candles[candles.length - 4]) 
             return candles;
         } catch (error) {
             if (error.response && error.response.status === 404) {
