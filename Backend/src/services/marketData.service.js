@@ -54,10 +54,10 @@ class MarketDataService {
 
                 candles.push({
                     time: timestamps[i],
-                    open: Number(open[i].toFixed(2)),
-                    high: Number(high[i].toFixed(2)),
-                    low: Number(low[i].toFixed(2)),
-                    close: Number(close[i].toFixed(2))
+                    open: Number(open[i]),
+                    high: Number(high[i]),
+                    low: Number(low[i]),
+                    close: Number(close[i])
                 });
             }
 
