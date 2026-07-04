@@ -81,14 +81,55 @@ const logValidationSummary = ({ validation, legIn, legOut, largestBaseBody }) =>
     console.log('================================================');
 };
 
-export const findBaseCandleGroup = async (candlesInput = null) => {
-    const candles = candlesInput || await marketDataService.getCandles('BTC-USD', '5m', '60d');
+export const debugLatestThreeBaseGroups = async () => {
+
+    const candles = await marketDataService.getCandles(
+        "BTC-USD",
+        "5m",
+        "60d"
+    );
+
+    if (!Array.isArray(candles) || candles.length < 3) {
+        return [];
+    }
+
+    let startIndex = candles.length - 1;
+
+    const groups = [];
+
+    for (let i = 0; i < 3; i++) {
+
+        console.log(`\n\n============== BASE GROUP ${i + 1} ==============\n`);
+
+        const group = findBaseCandleGroup(
+            candles,
+            startIndex
+        );
+
+        if (!group) {
+            break;
+        }
+
+        groups.push(group);
+
+        startIndex = group.nextStartIndex;
+
+        if (startIndex < 0) {
+            break;
+        }
+    }
+
+    return groups;
+};
+
+export const findBaseCandleGroup = (candles, startIndex) => {
+    // const candles = candlesInput || await marketDataService.getCandles('JIOFIN.NS', '5m', '60d');
 
     if (!Array.isArray(candles) || candles.length < 3) {
         return null;
     }
 
-    let scanIndex = candles.length - 1;
+    let scanIndex = startIndex;
 
     while (scanIndex >= 0) {
         const candle = candles[scanIndex];
@@ -173,17 +214,30 @@ export const findBaseCandleGroup = async (candlesInput = null) => {
         }
 
         const result = {
-            baseCandles,
-            legIn,
-            legOut,
-            baseStartTime: baseCandles[0].time,
-            baseEndTime: baseCandles[baseCandles.length - 1].time,
-            largestBaseBody,
-            requiredLegBody: validation.requiredLegBody,
-            legInBody: validation.legInBody,
-            legOutBody: validation.legOutBody,
-            validation
-        };
+    baseCandles,
+    legIn,
+    legOut,
+
+    baseStartIndex,
+    baseEndIndex,
+
+    legInIndex,
+    legOutIndex,
+
+    baseStartTime: baseCandles[0].time,
+    baseEndTime: baseCandles[baseCandles.length - 1].time,
+
+    largestBaseBody,
+
+    requiredLegBody: validation.requiredLegBody,
+
+    legInBody: validation.legInBody,
+    legOutBody: validation.legOutBody,
+
+    validation,
+
+    nextStartIndex: baseStartIndex - 1
+};
 
         console.log('================================================');
         console.log('Base Candle Set Found');
@@ -195,4 +249,7 @@ export const findBaseCandleGroup = async (candlesInput = null) => {
     return null;
 };
 
-export default findBaseCandleGroup;
+export default {
+    findBaseCandleGroup,
+    debugLatestThreeBaseGroups
+};
