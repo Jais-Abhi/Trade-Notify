@@ -19,11 +19,16 @@ export const startFTFScannerCron = () => {
 
         try {
             await findBaseCandleGroup();
+                            console.log("FTF Scanner Completed");
+
         } catch (error) {
             console.log('======================================');
             console.log('FTF Scanner Error');
             console.log(error);
             console.log('======================================');
         }
-    });
+    },{
+        scheduled: true,
+        timezone: "Asia/Kolkata"
+  });
 };

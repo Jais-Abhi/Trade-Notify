@@ -9,6 +9,7 @@ import {
 } from '../../utils/ftfCalculations.js';
 import marketDataService from '../marketData.service.js';
 import FTF from '../../models/baseCandle.schema.js';
+import { notifyNewBaseCandleGroup } from '../notificationService.js';
 
 const MIN_BASE_CANDLES = FTF_CONFIG.base.minCandles;
 const MAX_BASE_CANDLES = FTF_CONFIG.base.maxCandles;
@@ -340,6 +341,19 @@ export const findBaseCandleGroup = async (candlesInput, options = {}) => {
 
         ftf.latestBaseTimestamp = result.baseEndTime;
         await ftf.save();
+
+        await notifyNewBaseCandleGroup({
+            symbol,
+            interval,
+            baseCandleGroup: {
+                ...ftf.baseCandleGroups[ftf.baseCandleGroups.length - 1],
+                baseCandles,
+                legIn,
+                legOut,
+                baseStartTime: result.baseStartTime,
+                baseEndTime: result.baseEndTime
+            }
+        });
 
         console.log('================================================');
         console.log('MongoDB Save');
