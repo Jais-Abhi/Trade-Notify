@@ -83,5 +83,23 @@ Important note about live updates
 - It does not keep polling every 5 minutes automatically.
 - It fetches once when the chart loads and again only if the symbol or interval changes.
 
+Additional stock lookup flow
+- The project also has a separate stock list flow for search and symbol selection.
+- The backend loads stock metadata from Backend/src/config/stocks.json.
+- The controller in Backend/src/controllers/stock.controller.js reads this JSON file and exposes endpoints for:
+  - GET /api/stocks
+  - GET /api/stocks/search
+- The search endpoint filters stock records by symbol or company name using the JSON array directly.
+- It does not search a database; it searches the loaded JSON data in memory.
+- The frontend search UI in Frontend/src/components/SearchBar.jsx calls these endpoints and shows results in the search panel.
+- By default, the UI does not show the entire JSON file to the user; it requests a limited subset (around 100 results) for the search/list view.
+
+Timezone and market-time behavior
+- The candle timestamps returned by the backend are numeric Unix timestamps from Yahoo Finance.
+- The frontend chart in Frontend/src/components/ChartContainer.jsx passes these timestamps directly to Lightweight Charts.
+- The chart labels and tooltips are formatted using the Asia/Kolkata timezone so they appear in Indian time.
+- There is no explicit hardcoded logic in the frontend that says the market is only open from 09:15 to 15:30.
+- In this codebase, the chart simply displays the candle timestamps provided by the backend and formats them for Indian time display.
+
 Summary of data flow
 Frontend Chart -> Frontend API Client -> Backend Controller -> Backend Market Service -> Yahoo Finance -> Backend Service -> Backend Controller -> Frontend -> Lightweight Charts
