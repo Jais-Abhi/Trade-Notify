@@ -1,0 +1,42 @@
+[
+  {
+    "symbol": "BTC-USD",
+    "name": "Bitcoin"
+  },
+  {
+    "symbol": "ETH-USD",
+    "name": "Ethereum"
+  },
+  {
+    "symbol": "BNB-USD",
+    "name": "BNB"
+  },
+  {
+    "symbol": "SOL-USD",
+    "name": "Solana"
+  },
+  {
+    "symbol": "XRP-USD",
+    "name": "XRP"
+  },
+  {
+    "symbol": "ADA-USD",
+    "name": "Cardano"
+  },
+  {
+    "symbol": "DOGE-USD",
+    "name": "Dogecoin"
+  },
+  {
+    "symbol": "TRX-USD",
+    "name": "TRON"
+  },
+  {
+    "symbol": "AVAX-USD",
+    "name": "Avalanche"
+  },
+  {
+    "symbol": "LINK-USD",
+    "name": "Chainlink"
+  }
+]
