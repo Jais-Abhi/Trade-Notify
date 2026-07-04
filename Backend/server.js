@@ -13,6 +13,7 @@ import cookieParser from 'cookie-parser';
 import toolDefinitionRoutes from './src/routes/toolDefinition.routes.js';
 import toolPreferenceRoutes from './src/routes/toolPreference.routes.js';
 import { startFTFScannerCron } from './src/cron/ftfScanner.cron.js';
+import telegramController from './src/controllers/telegramController.js';
 
 // Load environment variables
 
@@ -62,6 +63,7 @@ app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/chart-drawings', chartDrawingRoutes);
 app.use('/api/tools', toolPreferenceRoutes);
 app.use('/admin/tool-definitions', toolDefinitionRoutes);
+app.get('/api/test/telegram', telegramController.sendTestMessage);
 
 const PORT = process.env.PORT || 5000;
 
