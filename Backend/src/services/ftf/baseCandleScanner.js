@@ -11,12 +11,18 @@ import marketDataService from '../marketData.service.js';
 const MIN_BASE_CANDLES = FTF_CONFIG.base.minCandles;
 const MAX_BASE_CANDLES = FTF_CONFIG.base.maxCandles;
 
-const formatCandleSummary = (candle, index) => {
-    if (!candle) {
-        return `Index ${index}: no candle`;
-    }
-
-    return `Index ${index} | Time ${candle.time} | Body ${getBody(candle).toFixed(4)} | Range ${((candle.high - candle.low).toFixed(4))}`;
+const toIST = (timestamp) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString('en-IN', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+    });
 };
 
 const logCandidateSequence = ({ sequenceLength, baseStartIndex, baseEndIndex, candles }) => {
@@ -25,8 +31,8 @@ const logCandidateSequence = ({ sequenceLength, baseStartIndex, baseEndIndex, ca
     console.log(`Length ${sequenceLength}`);
     console.log(`Base Start Index ${baseStartIndex}`);
     console.log(`Base End Index ${baseEndIndex}`);
-    console.log(`Base Start Time ${candles[baseStartIndex].time}`);
-    console.log(`Base End Time ${candles[baseEndIndex].time}`);
+    console.log(`Base Start Time ${toIST(candles[baseStartIndex].time)}`);
+    console.log(`Base End Time ${toIST(candles[baseEndIndex].time)}`);
     console.log('================================================');
 };
 
@@ -54,11 +60,11 @@ const buildValidationResult = ({ legInBody, legOutBody, largestBaseBody }) => {
 const logValidationSummary = ({ validation, legIn, legOut, largestBaseBody }) => {
     console.log('================================================');
     console.log('Leg-In');
-    console.log(`Time ${legIn.time}`);
+    console.log(`Time ${toIST(legIn.time)}`);
     console.log(`Body ${getBody(legIn).toFixed(4)}`);
     console.log('================================================');
     console.log('Leg-Out');
-    console.log(`Time ${legOut.time}`);
+    console.log(`Time ${toIST(legOut.time)}`);
     console.log(`Body ${getBody(legOut).toFixed(4)}`);
     console.log('================================================');
     console.log('Largest Base Body');
@@ -91,7 +97,7 @@ export const findBaseCandleGroup = async (candlesInput = null) => {
 
         console.log('================================================');
         console.log('Scanning Candle');
-        console.log(`Time ${candle.time}`);
+        console.log(`Time ${toIST(candle.time)}`);
         console.log(`Body ${body.toFixed(4)}`);
         console.log(`Base Candidate ${isBaseCandidate ? 'YES' : 'NO'}`);
         console.log('================================================');
