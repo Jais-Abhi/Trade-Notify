@@ -6,6 +6,28 @@ import DrawingLayer from './DrawingLayer';
 import DrawingToolbar from './DrawingToolbar';
 import FloatingDrawingToolbar from './FloatingDrawingToolbar';
 
+const getMarketPriceConfig = (symbol = '') => {
+    const normalizedSymbol = (symbol || '').toUpperCase();
+
+    if (normalizedSymbol.includes('=X')) {
+        return { precision: 5, minMove: 0.00001, label: 'Forex' };
+    }
+
+    if (normalizedSymbol.includes('-')) {
+        return { precision: 2, minMove: 0.01, label: 'Crypto' };
+    }
+
+    return { precision: 2, minMove: 0.01, label: 'Stocks' };
+};
+
+const formatPriceValue = (price, precision) => {
+    if (!Number.isFinite(price)) {
+        return '—';
+    }
+
+    return Number(price).toFixed(precision);
+};
+
 const ChartContainer = ({ 
     symbol, 
     interval = '5m', 
@@ -37,6 +59,7 @@ const ChartContainer = ({
         let chart;
         let candlestickSeries;
         let isActive = true;
+        const priceConfig = getMarketPriceConfig(symbol);
 
         const initChart = () => {
             if (!chartContainerRef.current) return;
@@ -96,9 +119,15 @@ const ChartContainer = ({
                         }).format(date);
                         return `${day} ${month}  ${year} ${timeLabel}`;
                     },
+                    priceFormatter: (price) => formatPriceValue(price, priceConfig.precision),
                 },
                 rightPriceScale: {
                     borderColor: '#1e293b',
+                    ticksVisible: true,
+                    scaleMargins: {
+                        top: 0.1,
+                        bottom: 0.1,
+                    },
                 }
             });
 
@@ -108,6 +137,11 @@ const ChartContainer = ({
                 borderVisible: false,
                 wickUpColor: '#10b981',
                 wickDownColor: '#ef4444',
+                priceFormat: {
+                    type: 'price',
+                    precision: priceConfig.precision,
+                    minMove: priceConfig.minMove,
+                },
             });
 
             setChartInstance(chart);
@@ -139,6 +173,9 @@ const ChartContainer = ({
 
                     candlestickSeries.setData(cleanData);
                     chart.timeScale().fitContent();
+                    chart.priceScale('right').applyOptions({
+                        autoScale: true,
+                    });
                 } else {
                     throw new Error(data.message || 'Malformed API response structure');
                 }
