@@ -14,7 +14,7 @@ import toolDefinitionRoutes from './src/routes/toolDefinition.routes.js';
 import toolPreferenceRoutes from './src/routes/toolPreference.routes.js';
 import { startFTFScannerCron } from './src/cron/ftfScanner.cron.js';
 import telegramController from './src/controllers/telegramController.js';
-
+import {findBaseCandleGroup} from "./src/services/ftf/baseCandleScanner.js"
 // Load environment variables
 
 const app = express();
@@ -22,13 +22,14 @@ const app = express();
 const startServer = async () => {
     try {
         await connectDB();
-        startFTFScannerCron();
+        // startFTFScannerCron();
     } catch (error) {
         console.error('Failed to connect to MongoDB', error);
     }
 };
 
 startServer();
+findBaseCandleGroup()
 
 // Middleware
 const allowedOrigins = [

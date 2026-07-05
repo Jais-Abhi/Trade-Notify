@@ -14,7 +14,7 @@ import { notifyNewBaseCandleGroup } from '../notificationService.js';
 const MIN_BASE_CANDLES = FTF_CONFIG.base.minCandles;
 const MAX_BASE_CANDLES = FTF_CONFIG.base.maxCandles;
 const DEFAULT_SYMBOL = 'BTC-USD';
-const DEFAULT_INTERVAL = '5m';
+const DEFAULT_INTERVAL = '15m';
 
 const toIST = (timestamp) => {
     const date = new Date(timestamp * 1000);
@@ -127,7 +127,7 @@ const logValidationSummary = ({ validation, legIn, legOut, largestBaseBody, base
 const fetchCandles = async () => {
     const candles = await marketDataService.getCandles(
         "BTC-USD",
-        "5m",
+        "15m",
         "60d"
     );
     return candles;
