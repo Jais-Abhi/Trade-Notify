@@ -20,7 +20,7 @@ class MarketDataService {
             });
 
             const data = response.data;
-            console.log(data.chart.result)
+            // console.log(data.chart.result)
             
             // Validate response structure
             if (!data || !data.chart || !data.chart.result || data.chart.result.length === 0) {
@@ -60,10 +60,10 @@ class MarketDataService {
                     close: Number(close[i])
                 });
             }
-            console.log(candles[candles.length - 1]) 
-            console.log(candles[candles.length - 2]) 
-            console.log(candles[candles.length - 3]) 
-            console.log(candles[candles.length - 4]) 
+            // console.log(candles[candles.length - 1]) 
+            // console.log(candles[candles.length - 2]) 
+            // console.log(candles[candles.length - 3]) 
+            // console.log(candles[candles.length - 4]) 
             return candles;
         } catch (error) {
             if (error.response && error.response.status === 404) {

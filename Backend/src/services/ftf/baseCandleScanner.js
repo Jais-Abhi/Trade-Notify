@@ -51,9 +51,9 @@ const logCandidateSequence = ({ sequenceLength, baseStartIndex, baseEndIndex, ca
 
     console.log('================================================');
     console.log('Candidate Sequence');
-    console.log(`Length ${sequenceLength}`);
-    console.log(`Base Start Index ${baseStartIndex}`);
-    console.log(`Base End Index ${baseEndIndex}`);
+    // console.log(`Length ${sequenceLength}`);
+    // console.log(`Base Start Index ${baseStartIndex}`);
+    // console.log(`Base End Index ${baseEndIndex}`);
     console.log(`Base Start Time ${toIST(candles[baseStartIndex].time)}`);
     console.log(`Base End Time ${toIST(candles[baseEndIndex].time)}`);
     console.log(`Number of Base Candles ${baseCandles.length}`);
@@ -63,8 +63,8 @@ const logCandidateSequence = ({ sequenceLength, baseStartIndex, baseEndIndex, ca
         console.log(`Base Candle ${index + 1} Body Percentage : ${bodyPercentage.toFixed(2)}%`);
     });
 
-    console.log(`Largest Base Body ${largestBaseBody.toFixed(4)}`);
-    console.log(`Largest Base Body Percentage ${largestBaseBodyPercentage.toFixed(2)}%`);
+    // console.log(`Largest Base Body ${largestBaseBody.toFixed(4)}`);
+    // console.log(`Largest Base Body Percentage ${largestBaseBodyPercentage.toFixed(2)}%`);
     console.log('================================================');
 };
 
@@ -96,32 +96,30 @@ const logValidationSummary = ({ validation, legIn, legOut, largestBaseBody, base
     const largestBaseMetrics = getCandleMetrics(largestBaseCandle);
 
     console.log('================================================');
-    console.log('Leg-In');
-    console.log(`Time ${toIST(legIn.time)}`);
-    console.log(`Body ${legInMetrics.body.toFixed(4)}`);
-    console.log(`Range ${legInMetrics.range.toFixed(4)}`);
+    console.log('Leg-In Time ${toIST(legIn.time)} ');
+    // console.log(`Body ${legInMetrics.body.toFixed(4)}`);
+    // console.log(`Range ${legInMetrics.range.toFixed(4)}`);
     console.log(`Body Percentage ${legInMetrics.bodyPercentage.toFixed(2)}%`);
     console.log('================================================');
-    console.log('Leg-Out');
-    console.log(`Time ${toIST(legOut.time)}`);
-    console.log(`Body ${legOutMetrics.body.toFixed(4)}`);
-    console.log(`Range ${legOutMetrics.range.toFixed(4)}`);
+    console.log('Leg-Out Time ${toIST(legOut.time)}');
+    // console.log(`Body ${legOutMetrics.body.toFixed(4)}`);
+    // console.log(`Range ${legOutMetrics.range.toFixed(4)}`);
     console.log(`Body Percentage ${legOutMetrics.bodyPercentage.toFixed(2)}%`);
     console.log('================================================');
-    console.log('Largest Base');
-    console.log(`Body ${largestBaseBody.toFixed(4)}`);
-    console.log(`Range ${largestBaseMetrics.range.toFixed(4)}`);
-    console.log(`Body Percentage ${largestBaseMetrics.bodyPercentage.toFixed(2)}%`);
-    console.log('================================================');
-    console.log('Required Leg Body');
-    console.log(validation.requiredLegBody.toFixed(4));
-    console.log('================================================');
-    console.log('Leg-In Validation');
-    console.log(validation.legIn.reason);
-    console.log('================================================');
-    console.log('Leg-Out Validation');
-    console.log(validation.legOut.reason);
-    console.log('================================================');
+    // console.log('Largest Base');
+    // console.log(`Body ${largestBaseBody.toFixed(4)}`);
+    // console.log(`Range ${largestBaseMetrics.range.toFixed(4)}`);
+    // console.log(`Body Percentage ${largestBaseMetrics.bodyPercentage.toFixed(2)}%`);
+    // console.log('================================================');
+    // console.log('Required Leg Body');
+    // console.log(validation.requiredLegBody.toFixed(4));
+    // console.log('================================================');
+    // console.log('Leg-In Validation');
+    // console.log(validation.legIn.reason);
+    // console.log('================================================');
+    // console.log('Leg-Out Validation');
+    // console.log(validation.legOut.reason);
+    // console.log('================================================');
 };
 
 const fetchCandles = async () => {
@@ -196,23 +194,18 @@ export const findBaseCandleGroup = async (candlesInput, options = {}) => {
     const latestBaseTimestamp = ftf.latestBaseTimestamp;
     let startIndex = typeof normalizedOptions.startIndex === 'number'
         ? normalizedOptions.startIndex
-        : candles.length - 3;
+        : candles.length - 4;
     let scanIndex = startIndex;
 
     while (scanIndex >= 0) {
         const candle = candles[scanIndex];
 
         if (candle.time <= latestBaseTimestamp) {
-            console.log('================================================');
-            console.log('Scanner Stopped');
-            console.log('================================================');
-            console.log('Reason :');
-            console.log('Already processed candles reached.');
-            console.log('');
-            console.log('Latest Base Timestamp :');
+            // console.log('================================================');
+            console.log('Scanner Stopped Reason : Already processed candles reached.');
+            // console.log('================================================');
             console.log(latestBaseTimestamp);
             console.log('Scanner stopped successfully.');
-            console.log('================================================');
             return null;
         }
         const isBaseCandidate = isBaseCandle(candle);
@@ -221,15 +214,15 @@ export const findBaseCandleGroup = async (candlesInput, options = {}) => {
         console.log('================================================');
         console.log('Scanning Candle');
         console.log(`Time            : ${toIST(candle.time)}`);
-        console.log(`Open            : ${candle.open.toFixed(4)}`);
-        console.log(`High            : ${candle.high.toFixed(4)}`);
-        console.log(`Low             : ${candle.low.toFixed(4)}`);
-        console.log(`Close           : ${candle.close.toFixed(4)}`);
-        console.log('');
-        console.log(`Body            : ${body.toFixed(4)}`);
-        console.log(`Range           : ${range.toFixed(4)}`);
+        // console.log(`Open            : ${candle.open.toFixed(4)}`);
+        // console.log(`High            : ${candle.high.toFixed(4)}`);
+        // console.log(`Low             : ${candle.low.toFixed(4)}`);
+        // console.log(`Close           : ${candle.close.toFixed(4)}`);
+        // console.log('');
+        // console.log(`Body            : ${body.toFixed(4)}`);
+        // console.log(`Range           : ${range.toFixed(4)}`);
         console.log(`Body Percentage : ${bodyPercentage.toFixed(2)}%`);
-        console.log('');
+        // console.log('');
         console.log(`Base Candidate  : ${isBaseCandidate ? 'YES' : 'NO'}`);
         console.log('================================================');
 
@@ -250,11 +243,8 @@ export const findBaseCandleGroup = async (candlesInput, options = {}) => {
         }
 
         if (sequenceLength > MAX_BASE_CANDLES) {
-            console.log('================================================');
-            console.log('Rejected');
-            console.log('Reason');
+            console.log('Rejected ❌');
             console.log('More than 3 consecutive base candidates');
-            console.log('================================================');
             scanIndex = sequenceEndIndex - 1;
             continue;
         }
@@ -275,8 +265,7 @@ export const findBaseCandleGroup = async (candlesInput, options = {}) => {
 
         if (legInIndex < 0 || legOutIndex >= candles.length) {
             console.log('================================================');
-            console.log('Rejected');
-            console.log('Reason');
+            console.log('Rejected ❌');
             console.log('Leg-In or Leg-Out index is out of bounds');
             console.log('================================================');
             scanIndex = baseStartIndex - 1;
@@ -296,8 +285,7 @@ export const findBaseCandleGroup = async (candlesInput, options = {}) => {
 
         if (!validation.overall) {
             console.log('================================================');
-            console.log('Rejected');
-            console.log('Reason');
+            console.log('Rejected ❌');
             console.log(validation.legIn.reason === 'PASS' ? validation.legOut.reason : validation.legIn.reason);
             console.log('================================================');
             scanIndex = baseStartIndex - 1;
@@ -355,21 +343,21 @@ export const findBaseCandleGroup = async (candlesInput, options = {}) => {
             }
         });
 
-        console.log('================================================');
+        // console.log('================================================');
         console.log('MongoDB Save');
-        console.log('================================================');
-        console.log(`Symbol                : ${symbol}`);
-        console.log(`Interval              : ${interval}`);
-        console.log(`Base Start Time (IST) : ${toIST(result.baseStartTime)}`);
-        console.log(`Base End Time (IST)   : ${toIST(result.baseEndTime)}`);
-        console.log(`Updated Timestamp     : ${result.baseEndTime}`);
+        // console.log('================================================');
+        // console.log(`Symbol                : ${symbol}`);
+        // console.log(`Interval              : ${interval}`);
+        // console.log(`Base Start Time (IST) : ${toIST(result.baseStartTime)}`);
+        // console.log(`Base End Time (IST)   : ${toIST(result.baseEndTime)}`);
+        // console.log(`Updated Timestamp     : ${result.baseEndTime}`);
         console.log(`Status                : SUCCESS`);
-        console.log('================================================');
+        // console.log('================================================');
 
-        console.log('================================================');
-        console.log('Base Candle Set Found');
-        console.log('================================================');
-        console.log(JSON.stringify(result, null, 2));
+        // console.log('================================================');
+        // console.log('Base Candle Set Found');
+        // console.log('================================================');
+        // console.log(JSON.stringify(result, null, 2));
         return result;
     }
 

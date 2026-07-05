@@ -4,22 +4,17 @@ import { findBaseCandleGroup } from '../services/ftf/baseCandleScanner.js';
 export const startFTFScannerCron = () => {
     console.log('======================================');
     console.log('FTF Scanner Cron Started');
-    console.log('Schedule :');
-    console.log('Every 5 Minutes');
-    console.log('Delay :');
-    console.log('2 Minutes');
+    console.log('Every 15 Minutes');
+    console.log('2 Minutes  Delay');
     console.log('======================================');
 
-    cron.schedule('2-59/5 * * * *', async () => {
-        console.log('======================================');
-        console.log('FTF Scanner Triggered');
-        console.log('Current Time (IST):');
-        console.log(new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
+    cron.schedule('2-59/15 * * * *', async () => {
+        console.log("Scanner Triggered",new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
         console.log('======================================');
 
         try {
             await findBaseCandleGroup();
-                            console.log("FTF Scanner Completed");
+            console.log("FTF Scanner Completed");
 
         } catch (error) {
             console.log('======================================');

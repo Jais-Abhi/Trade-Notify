@@ -22,14 +22,14 @@ const app = express();
 const startServer = async () => {
     try {
         await connectDB();
-        // startFTFScannerCron();
+        startFTFScannerCron();
     } catch (error) {
         console.error('Failed to connect to MongoDB', error);
     }
 };
 
 startServer();
-findBaseCandleGroup()
+// findBaseCandleGroup()
 
 // Middleware
 const allowedOrigins = [
