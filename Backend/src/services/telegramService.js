@@ -5,7 +5,7 @@ const TELEGRAM_API_BASE_URL = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}
 
 const getTelegramUpdates = async () => {
     try {
-        console.log('[Telegram] Fetching updates...');
+        // console.log('[Telegram] Fetching updates...');
 
         const response = await axios.get(`${TELEGRAM_API_BASE_URL}/getUpdates`);
 
@@ -13,7 +13,7 @@ const getTelegramUpdates = async () => {
             throw new Error(response.data?.description || 'Telegram getUpdates failed');
         }
 
-        console.log(`[Telegram] Total updates: ${response.data.result?.length || 0}`);
+        // console.log(`[Telegram] Total updates: ${response.data.result?.length || 0}`);
         return response.data.result || [];
     } catch (error) {
         console.error('[Telegram] Failed to fetch updates');
@@ -36,7 +36,7 @@ const sendTelegramMessage = async (chatId, message) => {
             throw new Error(response.data?.description || 'Telegram sendMessage failed');
         }
 
-        console.log('[Telegram] Message sent successfully.');
+        // console.log('[Telegram] Message sent successfully.');
         return response.data;
     } catch (error) {
         console.error(`[Telegram] Failed to send message to Chat ID: ${chatId}`);

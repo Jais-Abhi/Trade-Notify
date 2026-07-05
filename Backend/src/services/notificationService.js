@@ -75,7 +75,7 @@ const buildBaseCandleNotificationMessage = ({ symbol, interval, baseCandleGroup,
 };
 
 const notifyNewBaseCandleGroup = async ({ symbol, interval, baseCandleGroup }) => {
-    console.log('[Notification] New Base Candle Group saved.');
+    // console.log('[Notification] New Base Candle Group saved.');
 
     try {
         const updates = await getTelegramUpdates();
@@ -85,8 +85,8 @@ const notifyNewBaseCandleGroup = async ({ symbol, interval, baseCandleGroup }) =
                 .filter(Boolean)
         )];
 
-        console.log(`[Telegram] Found ${uniqueChatIds.length} Telegram users.`);
-        console.log('[Telegram] Sending notifications...');
+        // console.log(`[Telegram] Found ${uniqueChatIds.length} Telegram users.`);
+        // console.log('[Telegram] Sending notifications...');
 
         const message = buildBaseCandleNotificationMessage({
             symbol,
