@@ -9,8 +9,8 @@ export const startFTFScannerCron = () => {
     console.log('======================================');
 
     cron.schedule('2-59/15 * * * *', async () => {
-        console.log("Scanner Triggered",new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
         console.log('======================================');
+        console.log("Scanner Triggered",new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }));
 
         try {
             await findBaseCandleGroup();

@@ -58,10 +58,10 @@ const logCandidateSequence = ({ sequenceLength, baseStartIndex, baseEndIndex, ca
     console.log(`Base End Time ${toIST(candles[baseEndIndex].time)}`);
     console.log(`Number of Base Candles ${baseCandles.length}`);
 
-    baseCandles.forEach((baseCandle, index) => {
-        const { bodyPercentage } = getCandleMetrics(baseCandle);
-        console.log(`Base Candle ${index + 1} Body Percentage : ${bodyPercentage.toFixed(2)}%`);
-    });
+    // baseCandles.forEach((baseCandle, index) => {
+    //     const { bodyPercentage } = getCandleMetrics(baseCandle);
+    //     console.log(`Base Candle ${index + 1} Body Percentage : ${bodyPercentage.toFixed(2)}%`);
+    // });
 
     // console.log(`Largest Base Body ${largestBaseBody.toFixed(4)}`);
     // console.log(`Largest Base Body Percentage ${largestBaseBodyPercentage.toFixed(2)}%`);
@@ -96,12 +96,12 @@ const logValidationSummary = ({ validation, legIn, legOut, largestBaseBody, base
     const largestBaseMetrics = getCandleMetrics(largestBaseCandle);
 
     console.log('================================================');
-    console.log('Leg-In Time ${toIST(legIn.time)} ');
+    console.log(`Leg-In Time ${toIST(legIn.time)} `);
     // console.log(`Body ${legInMetrics.body.toFixed(4)}`);
     // console.log(`Range ${legInMetrics.range.toFixed(4)}`);
     console.log(`Body Percentage ${legInMetrics.bodyPercentage.toFixed(2)}%`);
     console.log('================================================');
-    console.log('Leg-Out Time ${toIST(legOut.time)}');
+    console.log(`Leg-Out Time ${toIST(legOut.time)}`);
     // console.log(`Body ${legOutMetrics.body.toFixed(4)}`);
     // console.log(`Range ${legOutMetrics.range.toFixed(4)}`);
     console.log(`Body Percentage ${legOutMetrics.bodyPercentage.toFixed(2)}%`);
@@ -221,9 +221,9 @@ export const findBaseCandleGroup = async (candlesInput, options = {}) => {
         // console.log('');
         // console.log(`Body            : ${body.toFixed(4)}`);
         // console.log(`Range           : ${range.toFixed(4)}`);
-        console.log(`Body Percentage : ${bodyPercentage.toFixed(2)}%`);
+        // console.log(`Body Percentage : ${bodyPercentage.toFixed(2)}%`);
         // console.log('');
-        console.log(`Base Candidate  : ${isBaseCandidate ? 'YES' : 'NO'}`);
+        console.log(`Base Candidate  : ${isBaseCandidate ? 'YES' : 'NO'} ${bodyPercentage.toFixed(2)}%`);
         console.log('================================================');
 
         if (!isBaseCandidate) {
