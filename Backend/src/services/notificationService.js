@@ -66,11 +66,6 @@ const buildBaseCandleNotificationMessage = ({ symbol, interval, baseCandleGroup,
     sections.push('Leg-Out');
     sections.push('');
     sections.push(...formatCandle(legOut, 'Time:').split('\n'));
-    sections.push('');
-    sections.push('Follow The Footprint Strategy');
-    sections.push('');
-    sections.push('TradeNotify');
-
     return sections.join('\n');
 };
 
