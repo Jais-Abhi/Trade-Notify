@@ -26,28 +26,43 @@ The browser renders price candles with TradingView Lightweight Charts and render
 
 ## Features
 
-### User-facing features
+TradeNotify is built around six core capabilities. Each one follows a simple pattern: discover an asset, view its history, analyze it visually, and optionally save or notify about the result.
 
-- Registration, login, session restoration, logout, and protected routes.
-- HTTP-only JWT authentication with a MongoDB token blacklist on logout.
-- Search across 2,364 NSE stock records, 10 crypto pairs, and 10 forex pairs stored in repository JSON catalogs.
-- Personal MongoDB-backed watchlist with add/remove controls.
-- Historical OHLC candlestick charts for stocks, crypto, and forex.
-- Configurable intervals: `1m`, `2m`, `5m`, `15m`, `30m`, `1h`, `4h`, `1d`, `5d`, `1wk`, `1mo`, and `3mo`.
-- India Standard Time chart labels and crosshair timestamps.
-- Symbol-aware price precision: 5 decimals for forex and 2 for stocks/crypto.
-- Pan, zoom, autoscale, crosshair, and fit-to-content behavior supplied by Lightweight Charts.
-- SVG technical-analysis tools: Trend Line, Price Range, Long Position, Short Position, and Fibonacci Retracement.
-- Drawing selection, endpoint/body dragging, specialized position handles, undo/redo, clear, delete, style editing, and manual save.
-- Per-user drawing-tool style/options preferences.
-- Drawings shared across intervals for the same user and symbol.
+### 1. Authentication and secure access
 
-### Backend automation
+- What it does: lets users create accounts, sign in, stay signed in, and access protected pages safely.
+- How it works: the frontend sends credentials to the backend, which hashes passwords with bcrypt and issues a JWT stored in an HTTP-only cookie. The auth middleware validates the token on every protected request and checks a MongoDB blacklist on logout.
+- Working flow: a user registers or logs in -> the backend creates or verifies the account -> a signed token is attached to the browser cookie -> the app restores the session with `/api/auth/me` -> protected routes become available -> logging out revokes the token and clears the session.
 
-- Scheduled FTF base-candle scanning for `BTC-USD` on `15m` candles.
-- Detection of 1-3 consecutive base candles with validated leg-in and leg-out bodies.
-- MongoDB persistence of detected groups and a last-processed timestamp.
-- Telegram Bot API notifications to unique chat IDs returned by `getUpdates`.
+### 2. Market search and asset discovery
+
+- What it does: helps users quickly find stocks, crypto, and forex assets from the built-in catalogs.
+- How it works: the search UI sends a debounced request to the backend, which reads the matching JSON catalog and returns relevant symbols and names.
+- Working flow: the user opens the search panel -> enters a symbol or name -> the request is sent after a short delay -> the backend filters the catalog -> matching assets appear in the list -> selecting one opens the chart page for that symbol.
+
+### 3. Watchlist management
+
+- What it does: lets users save favorite assets for fast access later.
+- How it works: the watchlist is stored in the user document in MongoDB, so it is personal to each account and can be updated without affecting other users.
+- Working flow: the user clicks the star next to an asset -> the frontend sends the add/remove request -> the backend updates the user's watchlist array -> the UI refreshes immediately -> the asset appears in the watchlist panel for future use.
+
+### 4. Candle charting and market analysis
+
+- What it does: displays historical OHLC price data so users can study market movement over time.
+- How it works: the chart page requests candles from the backend, the backend fetches data from Yahoo Finance, and the frontend renders the result as candlesticks in Lightweight Charts.
+- Working flow: the user selects a symbol and interval -> the backend fetches the relevant historical data -> the data is cleaned and formatted -> the chart populates with candles -> the user can zoom, pan, inspect crosshair values, and compare price structure across time.
+
+### 5. Drawing tools for technical analysis
+
+- What it does: allows users to draw trendlines, ranges, position setups, and Fibonacci levels directly on the chart.
+- How it works: the app uses an SVG layer above the chart so drawings can be interactive and stay aligned with market price/time. Each drawing is stored using time/price coordinates rather than screen pixels, which makes it move correctly when the chart is zoomed or panned.
+- Working flow: the user selects a drawing tool -> clicks the chart to place the first point -> moves the pointer to preview the shape -> clicks again to finish it -> the drawing is added to the chart state -> the user can drag, resize, edit style, and save it to MongoDB.
+
+### 6. FTF scanning and Telegram alerts
+
+- What it does: automatically scans for Follow The Footprint base-candle patterns and notifies users through Telegram.
+- How it works: a scheduled backend job runs at fixed intervals, loads recent candles, checks the base-candle rules, saves any new valid group in MongoDB, and sends a Telegram message to the bot’s known chat IDs.
+- Working flow: the scheduler wakes up -> the scanner loads recent market candles -> it tests the base-candle pattern and leg conditions -> a new valid group is stored when it has not been processed before -> the backend sends a structured alert to Telegram for review.
 
 ## Technology stack
 
